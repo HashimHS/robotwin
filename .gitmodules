@@ -1,3 +1,6 @@
 [submodule "assets/embodiments/bimanual_kuka"]
 	path = assets/embodiments/bimanual_kuka
 	url = git@github.com:Taokt/bimanual_kuka.git
+[submodule "assets/embodiments/yumi"]
+	path = assets/embodiments/yumi
+	# url = publish your github repo

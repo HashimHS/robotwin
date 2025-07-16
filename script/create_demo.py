@@ -189,19 +189,21 @@ def run_demo(task_name, task_config="demo_clean", seed=0):
             print(f"Failed to create demo for task {task_name}: {e}")
             traceback.print_exc()
             try:
-                demo.close_env()
-                demo.viewer.close()
+                if args["render_freq"]:
+                    demo.close_env()
+                    demo.viewer.close()
             except:
                 pass
             continue
 
-    while not demo.viewer.closed:
-        demo.scene.step()
-        demo.scene.update_render()
-        demo.viewer.render()
+    if args["render_freq"]:
+        while not demo.viewer.closed:
+            demo.scene.step()
+            demo.scene.update_render()
+            demo.viewer.render()
 
-    demo.close_env()
-    demo.viewer.close()
+        demo.close_env()
+        demo.viewer.close()
     
     return success
 
@@ -209,4 +211,5 @@ if __name__ == "__main__":
     # task_name = input("Enter task name or number (e.g., block_hammer_beat): ")
     # task_name = TASKS[int(task_name)] if task_name.isdigit() else task_name
     task_name = TASKS[31]
-    run_demo(task_name, task_config="demo_clean", seed=0)
+    seed = np.random.randint(0, 1000)  # Random seed for demo
+    run_demo(task_name, task_config="demo_clean", seed=seed)

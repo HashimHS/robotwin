@@ -3,7 +3,10 @@ episode_num: 100
 use_seed: false
 save_freq: 15
 embodiment:
-- aloha-agilex
+  # [ur5-wsg, ur5-wsg, 0.6]
+  # [franka-panda, franka-panda, 0.6]
+- bimanual_kuka
+# - aloha-agilex
 language_num: 100
 domain_randomization:
   random_background: false

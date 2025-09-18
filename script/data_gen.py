@@ -130,34 +130,27 @@ def main(task_name=None, task_config=None, gripper_bias=None):
     run(task, args)
 
 if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument("task_id", type=int)
+    parser = parser.parse_args()
+    task_id = parser.task_id
+    task_info = TASKS[task_id]
+    config = "demo_clean"
+    
+    if not task_info["works"]: # Skip tasks that are known to fail
+        print(f"Skipping task {task_id}: {task_info['name']} as it is marked as not working.")
+        exit(0)
+        
     from test_render import Sapien_TEST
     Sapien_TEST()
-
     import torch.multiprocessing as mp
     mp.set_start_method("spawn", force=True)
 
-    timings = []
-
-    for config in ["demo_clean", "demo_randomized"]:
-        for task_id, task_info in TASKS.items():
-            if task_info["works"]:
-                print(f"Running task {task_id}: {task_info['name']} with gripper bias {task_info['gripper_bias']}")
-                task_name = task_info["name"]
-                gripper_bias = task_info["gripper_bias"]
-
-                print(f"  Starting {config}...")
-                start_time = time.time()
-                main(task_name=task_name, task_config=config, gripper_bias=gripper_bias)
-                elapsed = time.time() - start_time
-                print(f"  Finished {config} in {elapsed:.2f} seconds.")
-                timings.append({
-                    "ID": task_id,
-                    "Task Name": task_name,
-                    "Config": config,
-                    "Time (s)": elapsed
-                })
-
-    # Print timing table using pandas DataFrame
-    df = pd.DataFrame(timings)
-    print("\nTiming Results:")
-    print(df.to_string(index=False))
+    print(f"Running task {task_id}: {task_info['name']} with gripper bias {task_info['gripper_bias']}")
+    task_name = task_info["name"]
+    gripper_bias = task_info["gripper_bias"]
+    print(f"  Starting {config}...")
+    start_time = time.time()
+    main(task_name=task_name, task_config=config, gripper_bias=gripper_bias)
+    elapsed = time.time() - start_time
+    print(f"  Finished {task_info['name']}:{config} in {elapsed:.2f} seconds.")

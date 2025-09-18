@@ -7,4 +7,4 @@ gpu_id=${1}
 export CUDA_VISIBLE_DEVICES=${gpu_id}
 
 PYTHONWARNINGS=ignore::UserWarning \
-python script/data_gen.py
+seq 1 50 | xargs -P 3 -I {} python script/data_gen.py {}

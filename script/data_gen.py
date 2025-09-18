@@ -134,8 +134,8 @@ if __name__ == "__main__":
     parser.add_argument("task_id", type=int)
     parser = parser.parse_args()
     task_id = parser.task_id
+    config = parser.task_config
     task_info = TASKS[task_id]
-    config = "demo_clean"
     
     if not task_info["works"]: # Skip tasks that are known to fail
         print(f"Skipping task {task_id}: {task_info['name']} as it is marked as not working.")

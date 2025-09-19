@@ -132,6 +132,7 @@ def main(task_name=None, task_config=None, gripper_bias=None):
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("task_id", type=int)
+    parser.add_argument("task_config", type=str)
     parser = parser.parse_args()
     task_id = parser.task_id
     config = parser.task_config
@@ -154,3 +155,16 @@ if __name__ == "__main__":
     main(task_name=task_name, task_config=config, gripper_bias=gripper_bias)
     elapsed = time.time() - start_time
     print(f"  Finished {task_info['name']}:{config} in {elapsed:.2f} seconds.")
+    
+    # create a small json file to record the completion
+    record = {
+        "task_id": task_id,
+        "task_name": task_name,
+        "task_config": config,
+        "gripper_bias": gripper_bias,
+        "success": True,
+        "elapsed_time": elapsed
+    }
+    record_path = os.path.join("./data", task_name, config, "completion_record.json")
+    with open(record_path, "w", encoding="utf-8") as f:
+        json.dump(record, f, indent=4)

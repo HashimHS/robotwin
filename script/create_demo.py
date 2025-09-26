@@ -19,62 +19,70 @@ current_file_path = os.path.abspath(__file__)
 parent_directory = os.path.dirname(current_file_path)
 
 # from envs.beat_block_hammer import *
-from collect_data import class_decorator, get_camera_config, get_embodiment_config
+from collect_data import class_decorator, get_camera_config
 
 TASKS = {
-    1: "adjust_bottle", # Fails (Bottle slips)
-    2: "beat_block_hammer", # Works (gripper_bias=0.1)
-    3: "blocks_ranking_rgb", # Works (gripper_bias=0.125)
-    4: "blocks_ranking_size", # Works (gripper_bias=0.125)
-    5: "click_alarmclock", # Works (gripper_bias=0.1)
-    6: "click_bell", # Works (gripper_bias=0.1)
-    7: "dump_bin_bigbin", # Works (gripper_bias=0.11)
-    8: "grab_roller", # Works (gripper_bias=0.125)
-    9: "handover_block", # Fails (Does not place block)
-    10: "handover_mic", # Fails (hard to adjust gripper bias)
-    11: "hanging_mug", # Fails (aligns correctly, Does not hang)
-    12: "lift_pot", # Fails (grasps, does not lift)
-    13: "move_can_pot", # Works (gripper_bias=0.13)
-    14: "move_pillbottle_pad", # Works (gripper_bias=0.13)
-    15: "move_playingcard_away", # Works (gripper_bias=0.13)
-    16: "move_stapler_pad", # Works (gripper_bias=0.13)
-    17: "open_laptop", # Works (gripper_bias=0.12)
-    18: "open_microwave", # Works (gripper_bias=0.105)
-    19: "pick_diverse_bottles", # Works (Low success rate, gripper_bias=0.11)
-    20: "pick_dual_bottles", # Works (gripper_bias=0.11)
-    21: "place_a2b_left", # Works (gripper_bias=0.12)
-    22: "place_a2b_right", # Works (gripper_bias=0.12)
-    23: "place_bread_basket", # Works (gripper_bias=0.12)
-    24: "place_bread_skillet", # Works (gripper_bias=0.125)
-    25: "place_burger_fries", # Works (gripper_bias=0.125)
-    26: "place_can_basket", # Works (gripper_bias=0.125)
-    27: "place_cans_plasticbox", # Works (gripper_bias=0.125)
-    28: "place_container_plate", # Works (gripper_bias=0.125)
-    29: "place_dual_shoes", # Fails (Collision always check fails)
-    30: "place_empty_cup", # Works (gripper_bias=0.125)
-    31: "place_fan", # Works (gripper_bias=0.125)
-    32: "place_mouse_pad", # Works (gripper_bias=0.125)
-    33: "place_object_basket", # Works (gripper_bias=0.125)
-    34: "place_object_scale", # Works (gripper_bias=0.125)
-    35: "place_object_stand", # Works (gripper_bias=0.125)
-    36: "place_phone_stand", # Fails (Placing offset)
-    37: "place_shoe", # Works (gripper_bias=0.125)
-    38: "press_stapler", # Works (gripper_bias=0.125)
-    39: "put_bottles_dustbin", # Fails (Handover issues)
-    40: "put_object_cabinet", # Fails (Collides with cabinet, Initial pose may need adjustment)
-    41: "rotate_qrcode", # Works (gripper_bias=0.125)
-    42: "scan_object", # Fails (gripper_bias=0.125, Seems to work but task returns failure)
-    43: "shake_bottle", # Fails (gripper_bias=0.12, Bottle slips because it is too big)
-    44: "shake_bottle_horizontally", # Fails (gripper_bias=0.12, Bottle slips because it is too big)
-    45: "stack_blocks_three", # Works (gripper_bias=0.12)
-    46: "stack_blocks_two", # Works (gripper_bias=0.12)
-    47: "stack_bowls_three", # Works (gripper_bias=0.125)
-    48: "stack_bowls_two", # Works (gripper_bias=0.125)
-    49: "stamp_seal", # Works (gripper_bias=0.12)
-    50: "turn_switch", # Fails (gripper_bias=0.115, Very low success rate due collisions)
+    1: {"name": "adjust_bottle", "gripper_bias": None, "works": False},  # Fails (Bottle slips)
+    2: {"name": "beat_block_hammer", "gripper_bias": 0.1, "works": True},  # Works
+    3: {"name": "blocks_ranking_rgb", "gripper_bias": 0.125, "works": True},  # Works
+    4: {"name": "blocks_ranking_size", "gripper_bias": 0.125, "works": True},  # Works
+    5: {"name": "click_alarmclock", "gripper_bias": 0.1, "works": True},  # Works
+    6: {"name": "click_bell", "gripper_bias": 0.1, "works": True},  # Works
+    7: {"name": "dump_bin_bigbin", "gripper_bias": 0.12, "works": True},  # Works
+    8: {"name": "grab_roller", "gripper_bias": 0.13, "works": True},  # Works
+    9: {"name": "handover_block", "gripper_bias": None, "works": False},  # Fails (Does not place block)
+    10: {"name": "handover_mic", "gripper_bias": None, "works": False},  # Fails (hard to adjust gripper bias)
+    11: {"name": "hanging_mug", "gripper_bias": None, "works": False},  # Fails (aligns correctly, Does not hang)
+    12: {"name": "lift_pot", "gripper_bias": None, "works": False},  # Fails (grasps, does not lift)
+    13: {"name": "move_can_pot", "gripper_bias": 0.125, "works": True},  # Works
+    14: {"name": "move_pillbottle_pad", "gripper_bias": 0.125, "works": True},  # Works
+    15: {"name": "move_playingcard_away", "gripper_bias": 0.125, "works": True},  # Works
+    16: {"name": "move_stapler_pad", "gripper_bias": 0.125, "works": True},  # Works
+    17: {"name": "open_laptop", "gripper_bias": 0.12, "works": True},  # Works
+    18: {"name": "open_microwave", "gripper_bias": 0.105, "works": True},  # Works
+    19: {"name": "pick_diverse_bottles", "gripper_bias": 0.11, "works": True},  # Works (Low success rate)
+    20: {"name": "pick_dual_bottles", "gripper_bias": 0.11, "works": True},  # Works
+    21: {"name": "place_a2b_left", "gripper_bias": 0.12, "works": True},  # Works
+    22: {"name": "place_a2b_right", "gripper_bias": 0.12, "works": True},  # Works
+    23: {"name": "place_bread_basket", "gripper_bias": 0.12, "works": True},  # Works
+    24: {"name": "place_bread_skillet", "gripper_bias": 0.125, "works": True},  # Works
+    25: {"name": "place_burger_fries", "gripper_bias": 0.125, "works": True},  # Works
+    26: {"name": "place_can_basket", "gripper_bias": 0.125, "works": True},  # Works
+    27: {"name": "place_cans_plasticbox", "gripper_bias": 0.125, "works": True},  # Works
+    28: {"name": "place_container_plate", "gripper_bias": 0.125, "works": True},  # Works
+    29: {"name": "place_dual_shoes", "gripper_bias": None, "works": False},  # Fails (Collision always check fails)
+    30: {"name": "place_empty_cup", "gripper_bias": 0.125, "works": True},  # Works
+    31: {"name": "place_fan", "gripper_bias": 0.125, "works": True},  # Works
+    32: {"name": "place_mouse_pad", "gripper_bias": 0.125, "works": True},  # Works
+    33: {"name": "place_object_basket", "gripper_bias": 0.125, "works": True},  # Works
+    34: {"name": "place_object_scale", "gripper_bias": 0.125, "works": True},  # Works
+    35: {"name": "place_object_stand", "gripper_bias": 0.125, "works": True},  # Works
+    36: {"name": "place_phone_stand", "gripper_bias": None, "works": False},  # Fails (Placing offset)
+    37: {"name": "place_shoe", "gripper_bias": 0.125, "works": True},  # Works
+    38: {"name": "press_stapler", "gripper_bias": 0.125, "works": True},  # Works
+    39: {"name": "put_bottles_dustbin", "gripper_bias": None, "works": False},  # Fails (Handover issues)
+    40: {"name": "put_object_cabinet", "gripper_bias": None, "works": False},  # Fails (Collides with cabinet, Initial pose may need adjustment)
+    41: {"name": "rotate_qrcode", "gripper_bias": 0.125, "works": True},  # Works
+    42: {"name": "scan_object", "gripper_bias": 0.125, "works": False},  # Fails (Seems to work but task returns failure)
+    43: {"name": "shake_bottle", "gripper_bias": 0.12, "works": False},  # Fails (Bottle slips because it is too big)
+    44: {"name": "shake_bottle_horizontally", "gripper_bias": 0.12, "works": False},  # Fails (Bottle slips because it is too big)
+    45: {"name": "stack_blocks_three", "gripper_bias": 0.12, "works": True},  # Works
+    46: {"name": "stack_blocks_two", "gripper_bias": 0.12, "works": True},  # Works
+    47: {"name": "stack_bowls_three", "gripper_bias": 0.125, "works": True},  # Works
+    48: {"name": "stack_bowls_two", "gripper_bias": 0.125, "works": True},  # Works
+    49: {"name": "stamp_seal", "gripper_bias": 0.12, "works": True},  # Works
+    50: {"name": "turn_switch", "gripper_bias": 0.115, "works": False},  # Fails (Very low success rate due collisions)
 }
 
-def create_demo(task_name, task_config, seed=0):
+def get_embodiment_config(robot_file, gripper_bias=None):
+    robot_config_file = os.path.join(robot_file, "config.yml")
+    with open(robot_config_file, "r", encoding="utf-8") as f:
+        embodiment_args = yaml.load(f.read(), Loader=yaml.FullLoader)
+    if gripper_bias is not None:
+        embodiment_args["gripper_bias"] = gripper_bias
+    return embodiment_args
+
+def create_demo(task_name, task_config, seed=0, gripper_bias=0.125):
     
     task = class_decorator(task_name)
     config_path = f"./task_config/{task_config}.yml"
@@ -108,8 +116,8 @@ def create_demo(task_name, task_config, seed=0):
     else:
         raise "number of embodiment config parameters should be 1 or 3"
 
-    args["left_embodiment_config"] = get_embodiment_config(args["left_robot_file"])
-    args["right_embodiment_config"] = get_embodiment_config(args["right_robot_file"])
+    args["left_embodiment_config"] = get_embodiment_config(args["left_robot_file"], gripper_bias=gripper_bias)
+    args["right_embodiment_config"] = get_embodiment_config(args["right_robot_file"], gripper_bias=gripper_bias)
 
     if len(embodiment_type) == 1:
         embodiment_name = str(embodiment_type[0])
@@ -168,14 +176,14 @@ def move_gripper_to_pose(demo, pose=sapien.Pose(np.array([0, 0, 1]),np.array([0.
     demo.move((arm_tag, actions))
 
 
-def run_demo(task_name, task_config="demo_clean", seed=0):
+def run_demo(task_name, task_config="demo_clean", seed=0, gripper_bias=0.125):
     
 
     print(f"Running task: {task_name}")
     success = False
     for i in range(seed, seed + 3):
         try:
-            demo, args = create_demo(task_name, task_config, seed=seed)
+            demo, args = create_demo(task_name, task_config, seed=seed, gripper_bias=gripper_bias)
             demo.setup_demo(**args)
             demo.play_once() # if you want to run the task
             if demo.plan_success and demo.check_success():
@@ -210,6 +218,9 @@ def run_demo(task_name, task_config="demo_clean", seed=0):
 if __name__ == "__main__":
     # task_name = input("Enter task name or number (e.g., block_hammer_beat): ")
     # task_name = TASKS[int(task_name)] if task_name.isdigit() else task_name
-    task_name = TASKS[31]
+
+    task_info = TASKS[26]
+    task_name = task_info["name"]
+    gripper_bias = task_info["gripper_bias"]
     seed = np.random.randint(0, 1000)  # Random seed for demo
-    run_demo(task_name, task_config="demo_clean", seed=seed)
+    run_demo(task_name, task_config="demo_clean", seed=seed, gripper_bias=gripper_bias)

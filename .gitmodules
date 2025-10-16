@@ -3,5 +3,5 @@
 	url = git@github.com:Taokt/bimanual_kuka.git
 [submodule "policy/openpi"]
 	branch = kuka_robotwin
-	path = policy/openpi
+	path = policy/pi05
 	url = git@github.com:HashimHS/openpi.git

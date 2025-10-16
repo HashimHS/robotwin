@@ -5,12 +5,12 @@ import pandas as pd
 TASKS = {
     1: {"name": "adjust_bottle", "gripper_bias": None, "works": False},  # Fails (Bottle slips)
     2: {"name": "beat_block_hammer", "gripper_bias": 0.135, "works": True},  # Works
-    3: {"name": "blocks_ranking_rgb", "gripper_bias": 0.16, "works": True},  # Works
+    3: {"name": "blocks_ranking_rgb", "gripper_bias": 0.17, "works": True},  # Works
     4: {"name": "blocks_ranking_size", "gripper_bias": 0.16, "works": True},  # Works
     5: {"name": "click_alarmclock", "gripper_bias": 0.135, "works": True},  # Works
     6: {"name": "click_bell", "gripper_bias": 0.135, "works": True},  # Works
     7: {"name": "dump_bin_bigbin", "gripper_bias": 0.155, "works": True},  # Works
-    8: {"name": "grab_roller", "gripper_bias": 0.13, "works": True},  # Works
+    8: {"name": "grab_roller", "gripper_bias": 0.165, "works": True},  # Works
     9: {"name": "handover_block", "gripper_bias": None, "works": False},  # Fails (Does not place block)
     10: {"name": "handover_mic", "gripper_bias": None, "works": False},  # Fails (hard to adjust gripper bias)
     11: {"name": "hanging_mug", "gripper_bias": None, "works": False},  # Fails (aligns correctly, Does not hang)
@@ -19,17 +19,17 @@ TASKS = {
     14: {"name": "move_pillbottle_pad", "gripper_bias": 0.16, "works": True},  # Works
     15: {"name": "move_playingcard_away", "gripper_bias": 0.16, "works": True},  # Works
     16: {"name": "move_stapler_pad", "gripper_bias": 0.16, "works": True},  # Works
-    17: {"name": "open_laptop", "gripper_bias": 0.155, "works": True},  # Works
-    18: {"name": "open_microwave", "gripper_bias": 0.14, "works": True},  # Works
-    19: {"name": "pick_diverse_bottles", "gripper_bias": 0.145, "works": True},  # Works (Low success rate)
-    20: {"name": "pick_dual_bottles", "gripper_bias": 0.145, "works": True},  # Works
+    17: {"name": "open_laptop", "gripper_bias": 0.155, "works": False},  # Works
+    18: {"name": "open_microwave", "gripper_bias": 0.14, "works": False},  # Works
+    19: {"name": "pick_diverse_bottles", "gripper_bias": 0.15, "works": False},  # Works (Low success rate)
+    20: {"name": "pick_dual_bottles", "gripper_bias": 0.15, "works": False},  # Works
     21: {"name": "place_a2b_left", "gripper_bias": 0.155, "works": True},  # Works
     22: {"name": "place_a2b_right", "gripper_bias": 0.155, "works": True},  # Works
     23: {"name": "place_bread_basket", "gripper_bias": 0.155, "works": True},  # Works
     24: {"name": "place_bread_skillet", "gripper_bias": 0.16, "works": True},  # Works
-    25: {"name": "place_burger_fries", "gripper_bias": 0.16, "works": True},  # Works
+    25: {"name": "place_burger_fries", "gripper_bias": 0.165, "works": True},  # Works
     26: {"name": "place_can_basket", "gripper_bias": 0.16, "works": True},  # Works
-    27: {"name": "place_cans_plasticbox", "gripper_bias": 0.16, "works": True},  # Works
+    27: {"name": "place_cans_plasticbox", "gripper_bias": 0.17, "works": True},  # Works
     28: {"name": "place_container_plate", "gripper_bias": 0.16, "works": True},  # Works
     29: {"name": "place_dual_shoes", "gripper_bias": None, "works": False},  # Fails (Collision always check fails)
     30: {"name": "place_empty_cup", "gripper_bias": 0.16, "works": True},  # Works
@@ -47,8 +47,8 @@ TASKS = {
     42: {"name": "scan_object", "gripper_bias": 0.16, "works": False},  # Fails (Seems to work but task returns failure)
     43: {"name": "shake_bottle", "gripper_bias": 0.155, "works": False},  # Fails (Bottle slips because it is too big)
     44: {"name": "shake_bottle_horizontally", "gripper_bias": 0.155, "works": False},  # Fails (Bottle slips because it is too big)
-    45: {"name": "stack_blocks_three", "gripper_bias": 0.155, "works": True},  # Works
-    46: {"name": "stack_blocks_two", "gripper_bias": 0.155, "works": True},  # Works
+    45: {"name": "stack_blocks_three", "gripper_bias": 0.17, "works": True},  # Works
+    46: {"name": "stack_blocks_two", "gripper_bias": 0.17, "works": True},  # Works
     47: {"name": "stack_bowls_three", "gripper_bias": 0.16, "works": True},  # Works
     48: {"name": "stack_bowls_two", "gripper_bias": 0.16, "works": True},  # Works
     49: {"name": "stamp_seal", "gripper_bias": 0.155, "works": True},  # Works

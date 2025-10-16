@@ -24,12 +24,12 @@ from collect_data import class_decorator, get_camera_config
 TASKS = {
     1: {"name": "adjust_bottle", "gripper_bias": None, "works": False},  # Fails (Bottle slips)
     2: {"name": "beat_block_hammer", "gripper_bias": 0.135, "works": True},  # Works
-    3: {"name": "blocks_ranking_rgb", "gripper_bias": 0.16, "works": True},  # Works
+    3: {"name": "blocks_ranking_rgb", "gripper_bias": 0.17, "works": True},  # Works
     4: {"name": "blocks_ranking_size", "gripper_bias": 0.16, "works": True},  # Works
     5: {"name": "click_alarmclock", "gripper_bias": 0.135, "works": True},  # Works
     6: {"name": "click_bell", "gripper_bias": 0.135, "works": True},  # Works
     7: {"name": "dump_bin_bigbin", "gripper_bias": 0.155, "works": True},  # Works
-    8: {"name": "grab_roller", "gripper_bias": 0.13, "works": True},  # Works
+    8: {"name": "grab_roller", "gripper_bias": 0.165, "works": True},  # Works
     9: {"name": "handover_block", "gripper_bias": None, "works": False},  # Fails (Does not place block)
     10: {"name": "handover_mic", "gripper_bias": None, "works": False},  # Fails (hard to adjust gripper bias)
     11: {"name": "hanging_mug", "gripper_bias": None, "works": False},  # Fails (aligns correctly, Does not hang)

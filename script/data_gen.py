@@ -54,6 +54,15 @@ TASKS = {
     49: {"name": "stamp_seal", "gripper_bias": 0.155, "works": True},  # Works
     50: {"name": "turn_switch", "gripper_bias": 0.15, "works": False},  # Fails (Very low success rate due collisions)
     51: {"name": "pick_obj", "gripper_bias": 0.16, "works": True},  # Works
+    52: {"name": "pick_can_pot_atomic", "gripper_bias": 0.16, "works": True},  # Works
+    53: {"name": "pick_hammer_atomic", "gripper_bias": 0.135, "works": True},  # Works
+    54: {"name": "beat_block_atomic", "gripper_bias": 0.135, "works": True},  # Works
+    55: {"name": "place_atomic_basket", "gripper_bias": 0.16, "works": True},  # Works
+    56: {"name": "place_atomic_left", "gripper_bias": 0.155, "works": True},  # Works
+    57: {"name": "place_atomic_right", "gripper_bias": 0.155, "works": True},  # Works
+    58: {"name": "place_away_atomic", "gripper_bias": 0.16, "works": True},  # Works
+    59: {"name": "place_can_pot_atomic", "gripper_bias": 0.16, "works": True},  # Works
+    60: {"name": "place_mouse_atomic", "gripper_bias": 0.16, "works": True},  # Works
 }
 
 def get_embodiment_config(robot_file, gripper_bias=None):

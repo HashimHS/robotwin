@@ -57,9 +57,9 @@ class stack_blocks_three(Base_Task):
         self.add_prohibit_area(self.block1, padding=0.05)
         self.add_prohibit_area(self.block2, padding=0.05)
         self.add_prohibit_area(self.block3, padding=0.05)
-        target_pose = [-0.04, -0.13, 0.04, -0.05]
+        target_pose = [-0.04, 0, 0.04, -0.05]
         self.prohibited_area.append(target_pose)
-        self.block1_target_pose = [0, -0.13, 0.75 + self.table_z_bias, 0, 1, 0, 0]
+        self.block1_target_pose = [0, 0, 0.75 + self.table_z_bias, 0, 1, 0, 0]
 
     def play_once(self):
         # Initialize tracking variables for last used gripper and actor
@@ -99,7 +99,7 @@ class stack_blocks_three(Base_Task):
         self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07))  # arm_tag
 
         if self.last_actor is None:
-            target_pose = [0, -0.13, 0.75 + self.table_z_bias, 0, 1, 0, 0]
+            target_pose = [0, 0, 0.75 + self.table_z_bias, 0, 1, 0, 0]
         else:
             target_pose = self.last_actor.get_functional_point(1)
 

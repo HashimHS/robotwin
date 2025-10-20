@@ -114,6 +114,7 @@ class Base_Task(gym.Env):
         self.right_joint_path = kwags.get("right_joint_path", [])
         self.left_cnt = 0
         self.right_cnt = 0
+        self.record_path = True
 
         self.instruction = None  # for Eval
 
@@ -536,7 +537,7 @@ class Base_Task(gym.Env):
         save_img(save_path, rgb[camera_name]['rgb'])
 
     def _take_picture(self):  # save data
-        if not self.save_data:
+        if not self.save_data or not self.record_path:
             return
 
         print("saving: episode = ", self.ep_num, " index = ", self.FRAME_IDX, end="\r")
@@ -777,7 +778,8 @@ class Base_Task(gym.Env):
 
         if self.need_plan:
             left_result = self.robot.left_plan_path(pose, constraint_pose=constraint_pose)
-            self.left_joint_path.append(deepcopy(left_result))
+            if self.record_path:
+                self.left_joint_path.append(deepcopy(left_result))
         else:
             left_result = deepcopy(self.left_joint_path[self.left_cnt])
             self.left_cnt += 1
@@ -810,7 +812,8 @@ class Base_Task(gym.Env):
 
         if self.need_plan:
             right_result = self.robot.right_plan_path(pose, constraint_pose=constraint_pose)
-            self.right_joint_path.append(deepcopy(right_result))
+            if self.record_path:
+                self.right_joint_path.append(deepcopy(right_result))
         else:
             right_result = deepcopy(self.right_joint_path[self.right_cnt])
             self.right_cnt += 1
@@ -848,8 +851,9 @@ class Base_Task(gym.Env):
         if self.need_plan:
             left_result = self.robot.left_plan_path(left_target_pose, constraint_pose=left_constraint_pose)
             right_result = self.robot.right_plan_path(right_target_pose, constraint_pose=right_constraint_pose)
-            self.left_joint_path.append(deepcopy(left_result))
-            self.right_joint_path.append(deepcopy(right_result))
+            if self.record_path:
+                self.left_joint_path.append(deepcopy(left_result))
+                self.right_joint_path.append(deepcopy(right_result))
         else:
             left_result = deepcopy(self.left_joint_path[self.left_cnt])
             right_result = deepcopy(self.right_joint_path[self.right_cnt])
@@ -1703,3 +1707,12 @@ class Base_Task(gym.Env):
             # print(f"Saving image with episode_num={episode_num}, filename: {filename}, path: {generate_dir}")
         
         return image_data
+
+    def stop_recording(self):
+        self.record_path = False
+        self.default_need_plan = self.need_plan
+        self.need_plan = True
+
+    def start_recording(self):
+        self.record_path = True
+        self.need_plan = self.default_need_plan

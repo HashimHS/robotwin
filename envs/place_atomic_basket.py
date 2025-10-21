@@ -107,6 +107,7 @@ class place_atomic_basket(Base_Task):
             # Open gripper to release object
             self.move(self.open_gripper(arm_tag=self.arm_tag))
 
+            self.stop_recording()
             # Move arm away and grasp the basket with opposite arm (recovery strategy)
             self.move(
                 self.back_to_origin(arm_tag=self.arm_tag),
@@ -117,6 +118,7 @@ class place_atomic_basket(Base_Task):
             self.move(self.open_gripper(arm_tag=self.arm_tag))
             # lift arm up, to avoid collision with the basket
             self.move(self.move_by_displacement(arm_tag=self.arm_tag, z=0.08))
+            self.stop_recording()
             # Move arm away and grasp the basket with opposite arm
             self.move(
                 self.back_to_origin(arm_tag=self.arm_tag),
@@ -137,6 +139,7 @@ class place_atomic_basket(Base_Task):
             "{a}": str(self.arm_tag),
             "{b}": str(self.arm_tag.opposite),
         }
+        self.start_recording()
         return self.info
 
     def check_success(self):

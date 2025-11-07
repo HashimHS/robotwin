@@ -1,10 +1,12 @@
-# if you want to modify the config, please check the following tutorial first:
-# https://robotwin-platform.github.io/doc/usage/configurations.html
-render_freq: 0
-episode_num: 50
+render_freq: 5
+episode_num: 1
 use_seed: false
 save_freq: 15
-embodiment: [aloha-agilex]
+embodiment:
+  # [ur5-wsg, ur5-wsg, 0.6]
+  # [franka-panda, franka-panda, 0.6]
+- bimanual_kuka
+# - aloha-agilex
 language_num: 100
 domain_randomization:
   random_background: true

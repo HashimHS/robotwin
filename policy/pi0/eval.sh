@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export XLA_PYTHON_CLIENT_MEM_FRACTION=0.4 # ensure GPU < 24G
+
 policy_name=pi0
 task_name=${1}
 task_config=${2}
@@ -21,5 +23,6 @@ python script/eval_policy.py --config policy/$policy_name/deploy_policy.yml \
     --task_config ${task_config} \
     --train_config_name ${train_config_name} \
     --model_name ${model_name} \
+    --ckpt_setting ${model_name} \
     --seed ${seed} \
     --policy_name ${policy_name} 

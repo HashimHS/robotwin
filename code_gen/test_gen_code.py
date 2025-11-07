@@ -54,7 +54,9 @@ def enrich_actors(actor_list):
                     if "contact_points" in points_info:
                         contact_points = points_info["contact_points"]
                         valid_contact_points = any(
-                            point.get("id") and len(point.get("id", [])) > 0 for point in contact_points
+                            point.get("id") is not None and (
+                                not isinstance(point.get("id"), list) or len(point.get("id")) > 0
+                            ) for point in contact_points
                         )
                         enriched_actor["contact_points"] = contact_points if valid_contact_points else None
                     else:
@@ -87,6 +89,7 @@ def class_decorator_gen(task_name):
         object: Instance of the task class.
     """
     envs_module = importlib.import_module(f"envs_gen.gpt_{task_name}")
+    importlib.reload(envs_module)
     try:
         env_class = getattr(envs_module, f"gpt_{task_name}")
         return env_class()
@@ -105,6 +108,7 @@ def class_decorator_env(task_name):
         object: Instance of the task class.
     """
     envs_module = importlib.import_module(f"envs.{task_name}")
+    importlib.reload(envs_module)
     try:
         env_class = getattr(envs_module, task_name)
         return env_class()
@@ -122,7 +126,15 @@ def create_task_config(task_config_path, task_name):
     """
     with open(os.path.join(SCRIPT_PATH, "_task_config_template.json"), "r") as file:
         task_config_template = json.load(file)
+
+    # Modify task_name
     task_config_template["task_name"] = task_name
+
+    # Convert field format
+    if isinstance(task_config_template.get("embodiment"), str):
+        task_config_template["embodiment"] = [task_config_template["embodiment"]]
+
+    # Save as yml
     with open(task_config_path, "w") as f:
         yaml.dump(task_config_template, f, default_flow_style=False, sort_keys=False)
 
@@ -254,7 +266,7 @@ def run(TASK_ENV, args, check_num=10):
                 run_records.append("success!")
             else:
                 if not TASK_ENV.plan_success:
-                    if hasattr(TASK_ENV, 'lefft_plan_success') and not TASK_ENV.lefft_plan_success:
+                    if hasattr(TASK_ENV, 'left_plan_success') and not TASK_ENV.lefft_plan_success:
                         error_id = 1
                         run_records.append(error_list[1])
                     elif hasattr(TASK_ENV, 'right_plan_success') and not TASK_ENV.right_plan_success:

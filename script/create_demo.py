@@ -217,11 +217,9 @@ def run_demo(task_name, task_config="demo_clean", seed=0, gripper_bias=0.16):
     return success
 
 if __name__ == "__main__":
-    # task_name = input("Enter task name or number (e.g., block_hammer_beat): ")
-    # task_name = TASKS[int(task_name)] if task_name.isdigit() else task_name
-
-    task_info = TASKS[51]
-    task_name = task_info["name"]
-    gripper_bias = task_info["gripper_bias"]
+    task = sys.argv[1]
+    if not task:
+        task = input("Enter task name or number (e.g., block_hammer_beat): ")
+    task_info = TASKS[int(task)] if task.isdigit() else TASKS[next(key for key, value in TASKS.items() if value["name"] == task)]
     seed = np.random.randint(0, 1000)  # Random seed for demo
-    run_demo(task_name, task_config="demo_clean", seed=seed, gripper_bias=gripper_bias)
+    run_demo(task_info["name"], task_config="demo_clean", seed=seed, gripper_bias=task_info["gripper_bias"])

@@ -7,7 +7,11 @@ from ._GLOBAL_CONFIGS import *
 from copy import deepcopy
 import numpy as np
 
-
+BLOCKS = {
+    "red block": (1, 0, 0),
+    "green block": (0, 1, 0),
+    "blue block": (0, 0, 1),
+}
 class pick_obj(Base_Task):
 
     def setup_demo(self, **kwags):
@@ -30,18 +34,25 @@ class pick_obj(Base_Task):
             return available_ids
 
         object_list = [
-            "047_mouse",
-            "048_stapler",
-            "050_bell",
-            "057_toycar",
-            "073_rubikscube",
-            "075_bread",
-            "077_phone",
-            "081_playingcards",
-            "086_woodenblock",
-            "112_tea-box",
-            "113_coffee-box",
-            "107_soap",
+            # "047_mouse",
+            # "048_stapler",
+            # "050_bell",
+            # "057_toycar",
+            # "073_rubikscube",
+            # "075_bread",
+            # "077_phone",
+            # "081_playingcards",
+            # "086_woodenblock",
+            # "112_tea-box",
+            # "113_coffee-box",
+            # "107_soap",
+            "006_hamburg",
+            "105_sauce-can",
+            "039_mug",
+            "041_shoe",
+            "red block",
+            "green block",
+            "blue block",
         ]
 
         try_num, try_lim = 0, 100
@@ -85,36 +96,46 @@ class pick_obj(Base_Task):
 
         self.selected_modelname_A = np.random.choice(object_list)
 
-        available_model_ids = get_available_model_ids(self.selected_modelname_A)
-        if not available_model_ids:
-            raise ValueError(f"No available model_data.json files found for {self.selected_modelname_A}")
+        if self.selected_modelname_A not in BLOCKS:
+            available_model_ids = get_available_model_ids(self.selected_modelname_A)
+            if not available_model_ids:
+                raise ValueError(f"No available model_data.json files found for {self.selected_modelname_A}")
 
-        self.selected_model_id_A = np.random.choice(available_model_ids)
-        self.object = create_actor(
-            scene=self,
-            pose=rand_pos,
-            modelname=self.selected_modelname_A,
-            convex=True,
-            model_id=self.selected_model_id_A,
-        )
+            self.selected_model_id_A = np.random.choice(available_model_ids)
+            self.object = create_actor(
+                scene=self,
+                pose=rand_pos,
+                modelname=self.selected_modelname_A,
+                convex=True,
+                model_id=self.selected_model_id_A,
+            )
+        else:
+            self.selected_model_id_A = self.selected_modelname_A
+            self.object = self.create_block(self.selected_modelname_A, rand_pos)
 
         self.selected_modelname_B = np.random.choice(object_list)
+
         while self.selected_modelname_B == self.selected_modelname_A:
             self.selected_modelname_B = np.random.choice(object_list)
 
-        available_model_ids = get_available_model_ids(self.selected_modelname_B)
-        if not available_model_ids:
-            raise ValueError(f"No available model_data.json files found for {self.selected_modelname_B}")
+        if not self.selected_modelname_B in BLOCKS:
+            available_model_ids = get_available_model_ids(self.selected_modelname_B)
+            if not available_model_ids:
+                raise ValueError(f"No available model_data.json files found for {self.selected_modelname_B}")
 
-        self.selected_model_id_B = np.random.choice(available_model_ids)
+            self.selected_model_id_B = np.random.choice(available_model_ids)
 
-        self.target_object = create_actor(
-            scene=self,
-            pose=target_rand_pose,
-            modelname=self.selected_modelname_B,
-            convex=True,
-            model_id=self.selected_model_id_B,
-        )
+            self.target_object = create_actor(
+                scene=self,
+                pose=target_rand_pose,
+                modelname=self.selected_modelname_B,
+                convex=True,
+                model_id=self.selected_model_id_B,
+            )
+        else:
+            self.selected_model_id_B = self.selected_modelname_B
+            self.target_object = self.create_block(self.selected_modelname_B, target_rand_pose)
+
         self.object.set_mass(0.05)
         self.target_object.set_mass(0.05)
         self.add_prohibit_area(self.object, padding=0.05)
@@ -141,3 +162,25 @@ class pick_obj(Base_Task):
         object_pose = self.object.get_pose().p
         contact = self.get_gripper_actor_contact_position(self.selected_modelname_A)
         return (object_pose[2] > 0.8 and len(contact) > 0)
+    
+    def create_block(self, block_name, pose):
+        size = np.random.uniform(0.015, 0.025)
+        half_size = (size, size, size)
+        block_pose = rand_pose(
+            xlim=[-0.28, 0.28],
+            ylim=[-0.08, 0.05],
+            zlim=[0.765],
+            qpos=[1, 0, 0, 0],
+            ylim_prop=True,
+            rotate_rand=True,
+            rotate_lim=[0, 0, 0.75],
+        )
+        block_pose.p = pose.p
+        block = create_box(
+            scene=self,
+            pose=block_pose,
+            half_size=half_size,
+            color=BLOCKS[block_name],
+            name=block_name,
+        )
+        return block

@@ -1,0 +1,7 @@
+{
+  "full_description": "there is an object grasped in arm and a block on the table, use the <grasped object> in arm and <beat the block>",
+  "schema": "{A} notifies the grasped object, {a} notifies the arm that holds the object",
+  "preference": "num of words should not exceed 10",
+  "seen": [],
+  "unseen": []
+}

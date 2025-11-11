@@ -1,0 +1,7 @@
+{
+  "full_description": "there is a hammer on the table, use the arm {a} to <grab the hammer> {A} by the hammer handle",
+  "schema": "{A} notifies the hammer, {a} notifies the arm to grab the hammer",
+  "preference": "num of words should not exceed 10",
+  "seen": [],
+  "unseen": []
+}

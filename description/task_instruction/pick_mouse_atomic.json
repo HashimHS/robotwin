@@ -1,0 +1,7 @@
+{
+  "full_description": "there is a mouse on the table, use the arm {a} to <grasp the mouse> {A} on the table",
+  "schema": "{A} notifies the mouse, {a} notifies the arm to grasp the mouse",
+  "preference": "num of words should not exceed 10.",
+  "seen": [],
+  "unseen": []
+}

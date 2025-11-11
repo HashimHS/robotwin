@@ -1,0 +1,7 @@
+{
+  "full_description": "there is an object grasped in arm, place the <grasped object> away on the table using the arm",
+  "schema": "{A} notifies the grasped object, {a} notifies the arm that holds the object",
+  "preference": "num of words should not exceed 10",
+  "seen": [],
+  "unseen": []
+}

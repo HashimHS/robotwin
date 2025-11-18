@@ -273,6 +273,7 @@ class Base_Task(gym.Env):
         self.table_xy_bias = table_xy_bias
         wall_texture, table_texture = None, None
         table_height += self.table_z_bias
+        self.table_height = table_height
 
         if self.random_background:
             texture_type = "seen" if not self.eval_mode else "unseen"

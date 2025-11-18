@@ -20,7 +20,7 @@ TASKS = {
     15: {"name": "move_playingcard_away", "gripper_bias": 0.16, "works": True},  # Works
     16: {"name": "move_stapler_pad", "gripper_bias": 0.16, "works": True},  # Works
     17: {"name": "open_laptop", "gripper_bias": 0.155, "works": False},  # Works
-    18: {"name": "open_microwave", "gripper_bias": 0.14, "works": False},  # Works
+    18: {"name": "open_microwave", "gripper_bias": 0.14, "works": True},  # Works
     19: {"name": "pick_diverse_bottles", "gripper_bias": 0.15, "works": False},  # Works (Low success rate)
     20: {"name": "pick_dual_bottles", "gripper_bias": 0.15, "works": False},  # Works
     21: {"name": "place_a2b_left", "gripper_bias": 0.155, "works": True},  # Works
@@ -63,6 +63,8 @@ TASKS = {
     58: {"name": "place_away_atomic", "gripper_bias": 0.16, "works": True},  # Works
     59: {"name": "place_can_pot_atomic", "gripper_bias": 0.16, "works": True},  # Works
     60: {"name": "place_mouse_atomic", "gripper_bias": 0.16, "works": True},  # Works
+    61: {"name": "place_aonb_atomic", "gripper_bias": 0.16, "works": True},  # Works
+    62: {"name": "place_aonb", "gripper_bias": 0.16, "works": True},  # Works
 }
 
 def get_embodiment_config(robot_file, gripper_bias=None):

@@ -73,6 +73,7 @@ TASKS = {
     49: {"name": "stamp_seal", "gripper_bias": 0.155, "works": True},  # Works
     50: {"name": "turn_switch", "gripper_bias": 0.15, "works": False},  # Fails (Very low success rate due collisions)
     51: {"name": "pick_obj", "gripper_bias": 0.16, "works": True},  # Works
+    52: {"name": "place_aonb", "gripper_bias": 0.16, "works": True},  # Works
 }
 
 def get_embodiment_config(robot_file, gripper_bias=None):

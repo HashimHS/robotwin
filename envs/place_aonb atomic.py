@@ -1,0 +1,233 @@
+from ._base_task import Base_Task
+from .utils import *
+import sapien
+import math
+import glob
+import numpy as np
+from ._GLOBAL_CONFIGS import *
+
+
+BLOCKS = {
+    "red block": (1, 0, 0),
+    "green block": (0, 1, 0),
+    "blue block": (0, 0, 1),
+}
+
+class place_aonb(Base_Task):
+
+    def setup_demo(self, **kwags):
+        super()._init_task_env_(**kwags)
+
+    def load_actors(self):
+
+        def get_available_model_ids(modelname):
+            asset_path = os.path.join("assets/objects", modelname)
+            json_files = glob.glob(os.path.join(asset_path, "model_data*.json"))
+
+            available_ids = []
+            for file in json_files:
+                base = os.path.basename(file)
+                try:
+                    idx = int(base.replace("model_data", "").replace(".json", ""))
+                    available_ids.append(idx)
+                except ValueError:
+                    continue
+            return available_ids
+
+        object_list_A = [
+            "047_mouse",
+            "048_stapler",
+            "050_bell",
+            "057_toycar",
+            "073_rubikscube",
+            "075_bread",
+            "081_playingcards",
+            "086_woodenblock",
+            "112_tea-box",
+            "113_coffee-box",
+            "107_soap",
+            "006_hamburg",
+            "105_sauce-can",
+            "039_mug",
+            "041_shoe",
+            "080_pillbottle",
+            "071_can",
+            "red block",
+            "green block",
+            "blue block",
+        ]
+
+        object_list_B = [
+            "073_rubikscube",
+            "081_playingcards",
+            "086_woodenblock",
+            "107_soap",
+            "105_sauce-can",
+            "024_bowl",
+            "008_tray",
+            "072_electronicscale",
+            "074_displaystand",
+            "red block",
+            "green block",
+            "blue block",
+        ]
+
+        try_num, try_lim = 0, 100
+        while try_num <= try_lim:
+            rand_pos = rand_pose(
+                xlim=[-0.22, 0.22],
+                ylim=[-0.2, 0.0],
+                qpos=[0.5, 0.5, 0.5, 0.5],
+                rotate_rand=True,
+                rotate_lim=[0, 3.14, 0],
+            )
+            if rand_pos.p[0] > 0:
+                xlim = [0.18, 0.23]
+            else:
+                xlim = [-0.1, 0.1]
+            target_rand_pose = rand_pose(
+                xlim=xlim,
+                ylim=[-0.2, 0.0],
+                qpos=[0.5, 0.5, 0.5, 0.5],
+                rotate_rand=True,
+                rotate_lim=[0, 3.14, 0],
+            )
+            while (np.sqrt((target_rand_pose.p[0] - rand_pos.p[0])**2 + (target_rand_pose.p[1] - rand_pos.p[1])**2)
+                   < 0.1) or (np.abs(target_rand_pose.p[1] - rand_pos.p[1]) < 0.1):
+                target_rand_pose = rand_pose(
+                    xlim=xlim,
+                    ylim=[-0.2, 0.0],
+                    qpos=[0.5, 0.5, 0.5, 0.5],
+                    rotate_rand=True,
+                    rotate_lim=[0, 3.14, 0],
+                )
+            try_num += 1
+
+            distance = np.sqrt(np.sum((rand_pos.p[:2] - target_rand_pose.p[:2])**2))
+
+            if distance > 0.19 or rand_pos.p[0] > target_rand_pose.p[0]:
+                break
+
+        if try_num > try_lim:
+            raise "Actor create limit!"
+
+        self.selected_modelname_A = np.random.choice(object_list_A)
+
+        if self.selected_modelname_A not in BLOCKS:
+            available_model_ids = get_available_model_ids(self.selected_modelname_A)
+            if not available_model_ids:
+                raise ValueError(f"No available model_data.json files found for {self.selected_modelname_A}")
+
+            self.selected_model_id_A = np.random.choice(available_model_ids)
+            self.object_A = create_actor(
+                scene=self,
+                pose=rand_pos,
+                modelname=self.selected_modelname_A,
+                convex=True,
+                model_id=self.selected_model_id_A,
+            )
+        else:
+            self.selected_model_id_A = self.selected_modelname_A
+            self.object_A = self.create_block(self.selected_modelname_A, rand_pos)
+
+        self.selected_modelname_B = np.random.choice(object_list_B)
+
+        while self.selected_modelname_B == self.selected_modelname_A:
+            self.selected_modelname_B = np.random.choice(object_list_B)
+
+        if not self.selected_modelname_B in BLOCKS:
+            available_model_ids = get_available_model_ids(self.selected_modelname_B)
+            if not available_model_ids:
+                raise ValueError(f"No available model_data.json files found for {self.selected_modelname_B}")
+
+            self.selected_model_id_B = np.random.choice(available_model_ids)
+
+            self.target_object = create_actor(
+                scene=self,
+                pose=target_rand_pose,
+                modelname=self.selected_modelname_B,
+                convex=True,
+                model_id=self.selected_model_id_B,
+            )
+        else:
+            self.selected_model_id_B = self.selected_modelname_B
+            self.target_object = self.create_block(self.selected_modelname_B, target_rand_pose)
+
+        self.object_A.set_mass(0.05)
+        self.target_object.set_mass(0.05)
+        self.add_prohibit_area(self.object_A, padding=0.05)
+        self.add_prohibit_area(self.target_object, padding=0.1)
+
+    def play_once(self):
+        self.stop_recording()
+        # Determine which arm to use based on object's x position
+        self.object_A_z = self.object_A.get_pose().p[2]
+        arm_tag = ArmTag("right" if self.object_A.get_pose().p[0] > 0 else "left")
+
+        # Grasp the object with specified arm
+        self.move(self.grasp_actor(self.object_A, arm_tag=arm_tag, pre_grasp_dis=0.1))
+        # Lift the object upward by 0.1 meters along z-axis using arm movement
+        self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.1, move_axis="arm"))
+
+        # Get target pose and adjust x position to place object to the left of target
+        target_pose = self.target_object.get_pose().p.tolist()
+        target_pose[2] = (target_pose[2] - self.table_height)*2 + self.object_A_z + 0.02
+
+        self.start_recording()
+        if self.selected_modelname_A in BLOCKS:
+            target_pose += [0, 1, 0, 0]
+            self.move(
+                self.place_actor(
+                    self.object_A,
+                    target_pose=target_pose,
+                    arm_tag=arm_tag,
+                    functional_point_id=0,
+                    pre_dis=0.05,
+                    dis=0.,
+                    pre_dis_axis="fp",
+                ))
+        else:
+            # Place the object at the adjusted target position
+            self.move(self.place_actor(self.object_A, arm_tag=arm_tag, target_pose=target_pose))
+
+        # Record task information including object IDs and used arm
+        self.info["info"] = {
+            "{A}": f"{self.selected_modelname_A}/base{self.selected_model_id_A}",
+            "{B}": f"{self.selected_modelname_B}/base{self.selected_model_id_B}",
+            "{a}": str(arm_tag),
+        }
+        if self.selected_model_id_A in BLOCKS:
+            self.info["info"]["{A}"] = f"{self.selected_modelname_A}"
+        if self.selected_model_id_B in BLOCKS:
+            self.info["info"]["{B}"] = f"{self.selected_modelname_B}"
+        return self.info
+
+    def check_success(self):
+            object_pose = self.object_A.get_pose().p
+            scale_pose = self.target_object.get_pose().p
+            distance_threshold = 0.035
+            distance = np.linalg.norm(np.array(scale_pose[:2]) - np.array(object_pose[:2]))
+            return (distance < distance_threshold and object_pose[2] > (scale_pose[2] - 0.01))
+    
+    def create_block(self, block_name, pose):
+        size = np.random.uniform(0.015, 0.025)
+        half_size = (size, size, size)
+        block_pose = rand_pose(
+            xlim=[-0.28, 0.28],
+            ylim=[-0.08, 0.05],
+            zlim=[0.765],
+            qpos=[1, 0, 0, 0],
+            ylim_prop=True,
+            rotate_rand=True,
+            rotate_lim=[0, 0, 0.75],
+        )
+        block_pose.p = pose.p
+        block = create_box(
+            scene=self,
+            pose=block_pose,
+            half_size=half_size,
+            color=BLOCKS[block_name],
+            name=block_name,
+        )
+        return block
+

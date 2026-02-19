@@ -65,6 +65,8 @@ TASKS = {
     60: {"name": "place_mouse_atomic", "gripper_bias": 0.16, "works": True},  # Works
     61: {"name": "place_aonb_atomic", "gripper_bias": 0.16, "works": True},  # Works
     62: {"name": "place_aonb", "gripper_bias": 0.16, "works": True},  # Works
+    63: {"name": "blocks_ranking_rgb_atomic", "gripper_bias": 0.17, "works": True},  # Works
+    64: {"name": "stack_blocks_three_atomic", "gripper_bias": 0.17, "works": True},  # Works
 }
 
 def get_embodiment_config(robot_file, gripper_bias=None):

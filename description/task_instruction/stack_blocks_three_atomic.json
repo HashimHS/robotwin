@@ -1,0 +1,11 @@
+{
+  "full_description": "there are three colored blocks on the table, stack them in order red on table, green on red, blue on green",
+  "schema": "{A} notifies the red block, {B} notifies the green block, {C} notifies the blue block, {a} notifies the arm to manipulate the red block, {b} notifies the arm to manipulate the green block, {c} notifies the arm to manipulate the blue block",
+  "preference": "fixed single instruction matching BT output",
+  "seen": [
+    "place {A} on {B} with {a} arm!"
+  ],
+  "unseen": [
+    "place {A} on {B} with {a} arm!"
+  ]
+}

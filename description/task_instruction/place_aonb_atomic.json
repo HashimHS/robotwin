@@ -1,0 +1,11 @@
+{
+  "full_description": "there is an object grasped in arm and another object on the table, place the grasped object on top of the object on the table",
+  "schema": "{A} notifies the grasped object, {B} notifies the target object on the table, {a} notifies the arm grasping the object",
+  "preference": "fixed single instruction matching BT output",
+  "seen": [
+    "place {A} on {B} with {a} arm!"
+  ],
+  "unseen": [
+    "place {A} on {B} with {a} arm!"
+  ]
+}

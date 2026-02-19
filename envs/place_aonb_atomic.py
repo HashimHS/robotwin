@@ -13,7 +13,7 @@ BLOCKS = {
     "blue block": (0, 0, 1),
 }
 
-class place_aonb(Base_Task):
+class place_aonb_atomic(Base_Task):
 
     def setup_demo(self, **kwags):
         super()._init_task_env_(**kwags)
@@ -160,16 +160,12 @@ class place_aonb(Base_Task):
 
     def play_once(self):
         self.stop_recording()
-        # Determine which arm to use based on object's x position
         self.object_A_z = self.object_A.get_pose().p[2]
         arm_tag = ArmTag("right" if self.object_A.get_pose().p[0] > 0 else "left")
 
-        # Grasp the object with specified arm
         self.move(self.grasp_actor(self.object_A, arm_tag=arm_tag, pre_grasp_dis=0.1))
-        # Lift the object upward by 0.1 meters along z-axis using arm movement
         self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.1, move_axis="arm"))
 
-        # Get target pose and adjust x position to place object to the left of target
         target_pose = self.target_object.get_pose().p.tolist()
         target_pose[2] = (target_pose[2] - self.table_height)*2 + self.object_A_z + 0.02
 
@@ -187,10 +183,8 @@ class place_aonb(Base_Task):
                     pre_dis_axis="fp",
                 ))
         else:
-            # Place the object at the adjusted target position
             self.move(self.place_actor(self.object_A, arm_tag=arm_tag, target_pose=target_pose))
 
-        # Record task information including object IDs and used arm
         self.info["info"] = {
             "{A}": f"{self.selected_modelname_A}/base{self.selected_model_id_A}",
             "{B}": f"{self.selected_modelname_B}/base{self.selected_model_id_B}",
@@ -203,12 +197,12 @@ class place_aonb(Base_Task):
         return self.info
 
     def check_success(self):
-            object_pose = self.object_A.get_pose().p
-            scale_pose = self.target_object.get_pose().p
-            distance_threshold = 0.035
-            distance = np.linalg.norm(np.array(scale_pose[:2]) - np.array(object_pose[:2]))
-            return (distance < distance_threshold and object_pose[2] > (scale_pose[2] - 0.01))
-    
+        object_pose = self.object_A.get_pose().p
+        scale_pose = self.target_object.get_pose().p
+        distance_threshold = 0.035
+        distance = np.linalg.norm(np.array(scale_pose[:2]) - np.array(object_pose[:2]))
+        return (distance < distance_threshold and object_pose[2] > (scale_pose[2] - 0.01))
+
     def create_block(self, block_name, pose):
         size = np.random.uniform(0.015, 0.025)
         half_size = (size, size, size)
@@ -230,4 +224,3 @@ class place_aonb(Base_Task):
             name=block_name,
         )
         return block
-

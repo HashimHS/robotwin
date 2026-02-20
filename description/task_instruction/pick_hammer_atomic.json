@@ -3,9 +3,9 @@
   "schema": "{A} notifies the hammer, {a} notifies the arm to grab the hammer",
   "preference": "fixed single instruction matching BT output",
   "seen": [
-    "pick {A} with {a} arm!"
+    "pick {A} with {a}."
   ],
   "unseen": [
-    "pick {A} with {a} arm!"
+    "pick {A} with {a}."
   ]
 }

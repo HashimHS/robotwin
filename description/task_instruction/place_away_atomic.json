@@ -3,9 +3,9 @@
   "schema": "{A} notifies the grasped object, {a} notifies the arm that holds the object",
   "preference": "fixed single instruction matching BT output",
   "seen": [
-    "place {A} away with {a} arm!"
+    "place {A} away with {a}."
   ],
   "unseen": [
-    "place {A} away with {a} arm!"
+    "place {A} away with {a}."
   ]
 }

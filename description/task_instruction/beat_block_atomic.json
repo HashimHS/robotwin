@@ -3,9 +3,9 @@
   "schema": "{A} notifies the grasped object (tool), {a} notifies the arm that holds the object",
   "preference": "fixed single instruction matching BT output",
   "seen": [
-    "beat block with {A}!"
+    "beat block with {A}."
   ],
   "unseen": [
-    "beat block with {A}!"
+    "beat block with {A}."
   ]
 }

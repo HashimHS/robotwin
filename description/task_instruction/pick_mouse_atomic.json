@@ -3,9 +3,9 @@
   "schema": "{A} notifies the mouse, {a} notifies the arm to grasp the mouse",
   "preference": "fixed single instruction matching BT output",
   "seen": [
-    "pick {A} with {a} arm!"
+    "pick {A} with {a}."
   ],
   "unseen": [
-    "pick {A} with {a} arm!"
+    "pick {A} with {a}."
   ]
 }

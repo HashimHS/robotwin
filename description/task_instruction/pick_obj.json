@@ -3,9 +3,9 @@
   "schema": "{A} notifies the object. {a} notifies the arm.",
   "preference": "num of words should not exceed 10.",
   "seen": [
-    "pick {A} with {a} arm!"
+    "pick {A} with {a}."
   ],
   "unseen": [
-    "pick {A} with {a} arm!"
+    "pick {A} with {a}."
   ]
 }

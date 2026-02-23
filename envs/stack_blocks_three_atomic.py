@@ -2,6 +2,7 @@ from ._base_task import Base_Task
 from .utils import *
 import sapien
 import math
+import random
 
 
 class stack_blocks_three_atomic(Base_Task):
@@ -52,14 +53,25 @@ class stack_blocks_three_atomic(Base_Task):
             )
 
         self.block1 = create_block(block_pose_lst[0], (1, 0, 0))
+        self.block1.name = "red block"
         self.block2 = create_block(block_pose_lst[1], (0, 1, 0))
+        self.block2.name = "green block"
         self.block3 = create_block(block_pose_lst[2], (0, 0, 1))
+        self.block3.name = "blue block"
         self.add_prohibit_area(self.block1, padding=0.05)
         self.add_prohibit_area(self.block2, padding=0.05)
         self.add_prohibit_area(self.block3, padding=0.05)
         target_pose = [-0.04, 0, 0.04, -0.05]
         self.prohibited_area.append(target_pose)
         self.block1_target_pose = [0, 0, 0.75 + self.table_z_bias, 0, 1, 0, 0]
+
+        # We shuffle the order of blocks to increase the diversity of demonstrations.
+        blocks = [self.block1, self.block2, self.block3]
+        random.shuffle(blocks)
+
+        self.block1 = blocks[0]
+        self.block2 = blocks[1]
+        self.block3 = blocks[2]
 
     def play_once(self):
         self.last_gripper = None
@@ -68,18 +80,19 @@ class stack_blocks_three_atomic(Base_Task):
         arm_tag1 = self.pick_and_place_block_atomic(self.block1)
         arm_tag2 = self.pick_and_place_block_atomic(self.block2)
         arm_tag3 = self.pick_and_place_block_atomic(self.block3)
+        self.start_recording()
 
         self.info["info"] = {
-            "{A}": "red block",
-            "{B}": "green block",
-            "{C}": "blue block",
+            "{A}": self.block1.name,
+            "{B}": self.block2.name,
+            "{C}": self.block3.name,
             "{a}": str(arm_tag1),
             "{b}": str(arm_tag2),
             "{c}": str(arm_tag3),
         }
         return self.info
 
-    def pick_and_place_block_atomic(self, block):
+    def pick_and_place_block_atomic(self, block, record=False):
         self.stop_recording()
 
         block_pose = block.get_pose().p
@@ -95,7 +108,8 @@ class stack_blocks_three_atomic(Base_Task):
 
         self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07))
 
-        self.start_recording()
+        if record:
+            self.start_recording()
 
         if self.last_actor is None:
             target_pose = [0, 0, 0.75 + self.table_z_bias, 0, 1, 0, 0]

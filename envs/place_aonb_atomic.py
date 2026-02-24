@@ -41,6 +41,7 @@ class place_aonb_atomic(Base_Task):
             "057_toycar",
             "073_rubikscube",
             "075_bread",
+            "077_phone",
             "081_playingcards",
             "086_woodenblock",
             "112_tea-box",
@@ -55,6 +56,7 @@ class place_aonb_atomic(Base_Task):
             "red block",
             "green block",
             "blue block",
+            "002_bowl",
         ]
 
         object_list_B = [
@@ -63,7 +65,8 @@ class place_aonb_atomic(Base_Task):
             "086_woodenblock",
             "107_soap",
             "105_sauce-can",
-            "024_bowl",
+            "002_bowl",
+            "003_plate",
             "008_tray",
             "072_electronicscale",
             "074_displaystand",

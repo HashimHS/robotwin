@@ -3,6 +3,7 @@ from .utils import *
 import sapien
 import math
 import numpy as np
+import random
 
 
 class blocks_ranking_rgb_atomic(Base_Task):
@@ -55,27 +56,42 @@ class blocks_ranking_rgb_atomic(Base_Task):
 
         size = np.random.uniform(0.015, 0.025)
         half_size = (size, size, size)
+        blocks = {
+            0: {"color": (1, 0, 0), "name": "red block"},
+            1: {"color": (0, 1, 0), "name": "green block"},
+            2: {"color": (0, 0, 1), "name": "blue block"},
+        }
+
+        # We shuffle the order of blocks to increase the diversity of demonstrations.
+        block_indices = [0, 1, 2]
+        random.shuffle(block_indices)
+        colors = [blocks[i]["color"] for i in block_indices]
+        names = [blocks[i]["name"] for i in block_indices]
+
         self.block1 = create_box(
             scene=self,
             pose=block_pose_lst[0],
             half_size=half_size,
-            color=(1, 0, 0),
+            color=colors[0],
             name="box",
         )
+        self.block1.name = names[0]
         self.block2 = create_box(
             scene=self,
             pose=block_pose_lst[1],
             half_size=half_size,
-            color=(0, 1, 0),
+            color=colors[1],
             name="box",
         )
+        self.block2.name = names[1]
         self.block3 = create_box(
             scene=self,
             pose=block_pose_lst[2],
             half_size=half_size,
-            color=(0, 0, 1),
+            color=colors[2],
             name="box",
         )
+        self.block3.name = names[2]
 
         self.add_prohibit_area(self.block1, padding=0.05)
         self.add_prohibit_area(self.block2, padding=0.05)
@@ -101,25 +117,35 @@ class blocks_ranking_rgb_atomic(Base_Task):
             0.74 + self.table_z_bias,
         ] + [0, 1, 0, 0]
 
+        # We pick a random record list to determine which block's pick-and-place process will be recorded.
+        self.record_list = [True, False, False]
+        random.shuffle(self.record_list)
+
+        self.placing_order = [0, 1, 2]
+        random.shuffle(self.placing_order)
+
     def play_once(self):
+        self.stop_recording()
         self.last_gripper = None
 
-        arm_tag1 = self.pick_and_place_block_atomic(self.block1, self.block1_target_pose)
-        arm_tag2 = self.pick_and_place_block_atomic(self.block2, self.block2_target_pose)
-        arm_tag3 = self.pick_and_place_block_atomic(self.block3, self.block3_target_pose)
+        blocks = [self.block1, self.block2, self.block3]
+        target_poses = [self.block1_target_pose, self.block2_target_pose, self.block3_target_pose]
+        positions = ["left side", "center of the table", "right side"]
 
+        for i in self.placing_order:
+            arm_tag = self.pick_and_place_block_atomic(blocks[i], target_poses[i], record=self.record_list[i])
+            if self.record_list[i]:
+                recorded_arm_tag = arm_tag
+
+        record_idx = self.record_list.index(True)
         self.info["info"] = {
-            "{A}": "red block",
-            "{B}": "green block",
-            "{C}": "blue block",
-            "{a}": arm_tag1,
-            "{b}": arm_tag2,
-            "{c}": arm_tag3,
+            "{A}": blocks[record_idx].name,
+            "{a}": str(recorded_arm_tag),
+            "{B}": positions[record_idx],
         }
         return self.info
 
-    def pick_and_place_block_atomic(self, block, target_pose):
-        self.stop_recording()
+    def pick_and_place_block_atomic(self, block, target_pose, record=False):
 
         block_pose = block.get_pose().p
         arm_tag = ArmTag("left" if block_pose[0] < 0 else "right")
@@ -134,7 +160,8 @@ class blocks_ranking_rgb_atomic(Base_Task):
 
         self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07))
 
-        self.start_recording()
+        if record:
+            self.start_recording()
 
         self.move(
             self.place_actor(
@@ -149,6 +176,7 @@ class blocks_ranking_rgb_atomic(Base_Task):
         self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07, move_axis="arm"))
 
         self.last_gripper = arm_tag
+        self.stop_recording()
         return str(arm_tag)
 
     def check_success(self):

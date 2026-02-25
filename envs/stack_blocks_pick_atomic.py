@@ -5,7 +5,7 @@ import math
 import random
 
 
-class stack_blocks_three_atomic(Base_Task):
+class pick_blocks_rgb(Base_Task):
 
     def setup_demo(self, **kwags):
         super()._init_task_env_(**kwags)
@@ -103,6 +103,13 @@ class stack_blocks_three_atomic(Base_Task):
         block_pose = block.get_pose().p
         arm_tag = ArmTag("left" if block_pose[0] < 0 else "right")
 
+        if record:
+            self.start_recording()
+            self.info["info"] = {
+                "{A}": block.name,
+                "{a}": str(arm_tag),
+            }
+
         if self.last_gripper is not None and (self.last_gripper != arm_tag):
             self.move(
                 self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09),
@@ -115,27 +122,10 @@ class stack_blocks_three_atomic(Base_Task):
 
         if self.last_actor is None:
             target_pose = [0, 0, 0.75 + self.table_z_bias, 0, 1, 0, 0]
-
-            if record:
-                self.start_recording()
-                self.info["info"] = {
-                    "{A}": block.name,
-                    "{a}": str(arm_tag),
-                    "{B}": "center of the table",
-                }
-
         else:
             target_pose = self.last_actor.get_functional_point(1)
 
-            if record:
-                self.start_recording()
-                self.info["info"] = {
-                    "{A}": block.name,
-                    "{a}": str(arm_tag),
-                    "{B}": self.last_actor.name,
-                    "{b}": str(self.last_gripper),
-                }
-
+        self.stop_recording()
         self.move(
             self.place_actor(
                 block,
@@ -150,7 +140,6 @@ class stack_blocks_three_atomic(Base_Task):
 
         self.last_gripper = arm_tag
         self.last_actor = block
-        self.stop_recording()
         return str(arm_tag)
 
     def check_success(self):

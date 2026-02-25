@@ -24,7 +24,9 @@ def filter_instructions(instructions: List[str], episode_params: Dict[str, str])
     """
     filtered_instructions = []
     random.shuffle(instructions)
-
+    
+    return instructions
+    
     for instruction in instructions:
         placeholders = extract_placeholders(instruction)
         # Remove {} from episode_params keys for comparison
@@ -71,7 +73,7 @@ def replace_placeholders(instruction: str, episode_params: Dict[str, str]) -> st
             with open(json_path, "r") as f:
                 json_data = json.load(f)
             # Randomly choose one description and prepend 'the'
-            description = random.choice(json_data.get("raw_description", []))
+            description = json_data.get("raw_description", [])
             value = f"the {description}"
         # Check if the key is a single lowercase letter (arm placeholder)
         elif len(key) == 1 and "a" <= key <= "z":
@@ -112,11 +114,11 @@ def replace_placeholders_unseen(instruction: str, episode_params: Dict[str, str]
                 json_data = json.load(f)
             # Randomly choose one unseen description and prepend 'the'
             if "unseen" in json_data and json_data["unseen"]:
-                description = random.choice(json_data.get("raw_description", []))
+                description = json_data.get("raw_description", [])
                 value = f"the {description}"
             else:
                 # Fall back to seen descriptions if unseen is empty
-                description = random.choice(json_data.get("raw_description", []))
+                description = json_data.get("raw_description", [])
                 value = f"the {description}"
         # Check if the key is a single lowercase letter (arm placeholder)
         elif len(key) == 1 and "a" <= key <= "z":
@@ -198,7 +200,7 @@ def generate_episode_descriptions(task_name: str, episodes: List[Dict[str, str]]
     all_generated_descriptions = []
 
     # Process each episode
-    for i, episode in enumerate(tqdm(episodes, desc="Generating instructions")):
+    for i, episode in enumerate(tqdm(episodes, desc=f"Generating instructions for {task_name} task")):
         # Filter instructions that have all placeholders matching episode parameters
         filtered_seen_instructions = filter_instructions(seen_instructions, episode)
         filtered_unseen_instructions = filter_instructions(unseen_instructions, episode)

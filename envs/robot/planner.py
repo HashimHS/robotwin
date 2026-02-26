@@ -134,7 +134,11 @@ try:
                 joint_names=self.active_joints_name,
             )
             # plan
-            plan_config = MotionGenPlanConfig(max_attempts=10)
+            plan_config = MotionGenPlanConfig(
+                max_attempts=30,
+                enable_finetune_trajopt=True,
+                parallel_finetune=True,
+            )
             if constraint_pose is not None:
                 pose_cost_metric = PoseCostMetric(
                     hold_partial_pose=True,
@@ -219,7 +223,11 @@ try:
             joint_angles_cuda = torch.cat([joint_angles_cuda] * num_poses, dim=0)
             start_joint_states = JointState.from_position(joint_angles_cuda, joint_names=self.active_joints_name)
             # plan
-            plan_config = MotionGenPlanConfig(max_attempts=10)
+            plan_config = MotionGenPlanConfig(
+                max_attempts=30,
+                enable_finetune_trajopt=True,
+                parallel_finetune=True,
+            )
             if constraint_pose is not None:
                 pose_cost_metric = PoseCostMetric(
                     hold_partial_pose=True,

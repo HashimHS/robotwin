@@ -1,0 +1,11 @@
+{
+  "full_description": "<Place> the red block, green block, and blue block <in the order> of red, green, and blue from left to right, <placing in a row>.",
+  "schema": "{A} notifies the red block, {B} notifies the green block, {C} notifies the blue block, {a} notifies the arm to grab red block, {b} notifies the arm to grab green block, {c} notifies the arm to grab blue block",
+  "preference": "num of words should not exceed 30",
+  "seen": [
+    "Set {A}, {B}, and {C} side by side in the order of {A}, {B}, then {C}."
+  ],
+  "unseen": [
+    "Set {A}, {B}, and {C} side by side in the order of {A}, {B}, then {C}."
+  ]
+}

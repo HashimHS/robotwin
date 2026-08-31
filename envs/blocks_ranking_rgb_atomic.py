@@ -73,7 +73,7 @@ class blocks_ranking_rgb_atomic(Base_Task):
             pose=block_pose_lst[0],
             half_size=half_size,
             color=colors[0],
-            name="box",
+            name=names[0],
         )
         self.block1.name = names[0]
         self.block2 = create_box(
@@ -81,7 +81,7 @@ class blocks_ranking_rgb_atomic(Base_Task):
             pose=block_pose_lst[1],
             half_size=half_size,
             color=colors[1],
-            name="box",
+            name=names[1],
         )
         self.block2.name = names[1]
         self.block3 = create_box(
@@ -89,7 +89,7 @@ class blocks_ranking_rgb_atomic(Base_Task):
             pose=block_pose_lst[2],
             half_size=half_size,
             color=colors[2],
-            name="box",
+            name=names[2],
         )
         self.block3.name = names[2]
 

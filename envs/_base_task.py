@@ -146,7 +146,7 @@ class Base_Task(gym.Env):
                     self.step_lim = data[self.task_name]
                 except:
                     print(f"{self.task_name} not in step limit file, set to 1000")
-                    self.step_lim = 1000
+                    self.step_lim = 700
 
         # info
         self.info = dict()

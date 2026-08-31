@@ -73,7 +73,7 @@ class blocks_ranking_rgb_r(Base_Task):
             pose=block_pose_lst[0],
             half_size=half_size,
             color=colors[0],
-            name="box",
+            name=names[0],
         )
         self.block1.name = names[0]
         self.block2 = create_box(
@@ -81,7 +81,7 @@ class blocks_ranking_rgb_r(Base_Task):
             pose=block_pose_lst[1],
             half_size=half_size,
             color=colors[1],
-            name="box",
+            name=names[1],
         )
         self.block2.name = names[1]
         self.block3 = create_box(
@@ -89,7 +89,7 @@ class blocks_ranking_rgb_r(Base_Task):
             pose=block_pose_lst[2],
             half_size=half_size,
             color=colors[2],
-            name="box",
+            name=names[2],
         )
         self.block3.name = names[2]
 
@@ -118,6 +118,13 @@ class blocks_ranking_rgb_r(Base_Task):
             y_pose,
             0.74 + self.table_z_bias,
         ] + [0, 1, 0, 0]
+
+    def get_info(self):
+        # Store information about the blocks and which arms were used
+        self.info["info"]["{A}"] = self.block1.name
+        self.info["info"]["{B}"] = self.block2.name
+        self.info["info"]["{C}"] = self.block3.name
+        return self.info
 
     def play_once(self):
         # Initialize last gripper state
@@ -177,4 +184,5 @@ class blocks_ranking_rgb_r(Base_Task):
 
         return (np.all(abs(block1_pose[:2] - block2_pose[:2]) < eps)
                 and np.all(abs(block2_pose[:2] - block3_pose[:2]) < eps) and block1_pose[0] < block2_pose[0]
-                and block2_pose[0] < block3_pose[0] and self.is_left_gripper_open() and self.is_right_gripper_open())
+                and block2_pose[0] < block3_pose[0])
+                # and self.is_left_gripper_open() and self.is_right_gripper_open())

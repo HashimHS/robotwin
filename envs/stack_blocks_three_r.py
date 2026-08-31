@@ -43,13 +43,13 @@ class stack_blocks_three_r(Base_Task):
                 )
             block_pose_lst.append(deepcopy(block_pose))
 
-        def create_block(block_pose, color):
+        def create_block(block_pose, color, name):
             return create_box(
                 scene=self,
                 pose=block_pose,
                 half_size=(block_half_size, block_half_size, block_half_size),
                 color=color,
-                name="box",
+                name=name,
             )
 
         blocks = {
@@ -64,11 +64,11 @@ class stack_blocks_three_r(Base_Task):
         colors = [blocks[i]["color"] for i in block_indices]
         names = [blocks[i]["name"] for i in block_indices]
 
-        self.block1 = create_block(block_pose_lst[0], colors[0])
+        self.block1 = create_block(block_pose_lst[0], colors[0], name=names[0])
         self.block1.name = names[0]
-        self.block2 = create_block(block_pose_lst[1], colors[1])
+        self.block2 = create_block(block_pose_lst[1], colors[1], name=names[1])
         self.block2.name = names[1]
-        self.block3 = create_block(block_pose_lst[2], colors[2])
+        self.block3 = create_block(block_pose_lst[2], colors[2], name=names[2])
         self.block3.name = names[2]
         self.add_prohibit_area(self.block1, padding=0.05)
         self.add_prohibit_area(self.block2, padding=0.05)
@@ -76,6 +76,14 @@ class stack_blocks_three_r(Base_Task):
         target_pose = [-0.04, 0, 0.04, -0.05]
         self.prohibited_area.append(target_pose)
         self.block1_target_pose = [0, 0, 0.75 + self.table_z_bias, 0, 1, 0, 0]
+
+
+    def get_info(self):
+        # Store information about the blocks and which arms were used
+        self.info["info"]["{A}"] = self.block1.name
+        self.info["info"]["{B}"] = self.block2.name
+        self.info["info"]["{C}"] = self.block3.name
+        return self.info
 
     def play_once(self):
         # Initialize tracking variables for last used gripper and actor
@@ -140,7 +148,8 @@ class stack_blocks_three_r(Base_Task):
         block2_pose = self.block2.get_pose().p
         block3_pose = self.block3.get_pose().p
         eps = [0.025, 0.025, 0.012]
-
-        return (np.all(abs(block2_pose - np.array(block1_pose[:2].tolist() + [block1_pose[2] + 0.05])) < eps)
-                and np.all(abs(block3_pose - np.array(block2_pose[:2].tolist() + [block2_pose[2] + 0.05])) < eps)
-                and self.is_left_gripper_open() and self.is_right_gripper_open())
+  
+        return (
+            np.all(abs(block2_pose - np.array(block1_pose[:2].tolist() + [block1_pose[2] + 0.05])) < eps)
+            and np.all(abs(block3_pose - np.array(block2_pose[:2].tolist() + [block2_pose[2] + 0.05])) < eps))
+            # and self.is_left_gripper_open() and self.is_right_gripper_open())

@@ -50,9 +50,9 @@ class pick_obj(Base_Task):
             "105_sauce-can",
             "039_mug",
             "041_shoe",
-            "red block",
-            "green block",
-            "blue block",
+            # "red block",
+            # "green block",
+            # "blue block",
         ]
 
         try_num, try_lim = 0, 100

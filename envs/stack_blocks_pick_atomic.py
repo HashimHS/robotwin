@@ -2,7 +2,6 @@ from ._base_task import Base_Task
 from .utils import *
 import sapien
 import math
-import random
 
 
 class pick_blocks_rgb(Base_Task):
@@ -66,16 +65,20 @@ class pick_blocks_rgb(Base_Task):
         self.block1_target_pose = [0, 0, 0.75 + self.table_z_bias, 0, 1, 0, 0]
 
         # We shuffle the order of blocks to increase the diversity of demonstrations.
+        # `np.random` is seeded with the episode seed (`random` is not), so the episode
+        # is reproducible from its seed.
+        # This reorders the blocks themselves, i.e. which one is manipulated first, so an
+        # unseeded shuffle would also desync the replay from the planned trajectory.
         blocks = [self.block1, self.block2, self.block3]
-        random.shuffle(blocks)
+        blocks = [blocks[i] for i in np.random.permutation(len(blocks))]
 
         self.block1 = blocks[0]
         self.block2 = blocks[1]
         self.block3 = blocks[2]
 
         # We pick a random record list to determine which block's pick-and-place process will be recorded.
-        self.record_list = [True, False, False]
-        random.shuffle(self.record_list)
+        self.record_list = [False, False, False]
+        self.record_list[np.random.randint(3)] = True
         
 
     def play_once(self):

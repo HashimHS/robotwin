@@ -3,7 +3,6 @@ from .utils import *
 import sapien
 import math
 import numpy as np
-import random
 
 
 class blocks_ranking_rgb_atomic(Base_Task):
@@ -63,8 +62,9 @@ class blocks_ranking_rgb_atomic(Base_Task):
         }
 
         # We shuffle the order of blocks to increase the diversity of demonstrations.
-        block_indices = [0, 1, 2]
-        random.shuffle(block_indices)
+        # `np.random` is seeded with the episode seed (`random` is not), so the episode
+        # is reproducible from its seed.
+        block_indices = [int(i) for i in np.random.permutation(3)]
         colors = [blocks[i]["color"] for i in block_indices]
         names = [blocks[i]["name"] for i in block_indices]
 
@@ -118,11 +118,14 @@ class blocks_ranking_rgb_atomic(Base_Task):
         ] + [0, 1, 0, 0]
 
         # We pick a random record list to determine which block's pick-and-place process will be recorded.
-        self.record_list = [True, False, False]
-        random.shuffle(self.record_list)
+        # `np.random` is seeded with the episode seed (`random` is not), so the episode
+        # is reproducible from its seed.
+        self.record_list = [False, False, False]
+        self.record_list[np.random.randint(3)] = True
 
-        self.placing_order = [0, 1, 2]
-        random.shuffle(self.placing_order)
+        # The placing order decides which block is manipulated first, so an unseeded
+        # shuffle would also desync the replay from the planned trajectory.
+        self.placing_order = [int(i) for i in np.random.permutation(3)]
 
     def play_once(self):
         self.stop_recording()

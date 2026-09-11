@@ -18,6 +18,7 @@ from .robot import Robot
 from .camera import Camera
 
 from copy import deepcopy
+from contextlib import contextmanager
 import subprocess
 from pathlib import Path
 import trimesh
@@ -156,6 +157,11 @@ class Base_Task(gym.Env):
             "table_texture": self.table_texture,
         }
         self.info["info"] = {}
+        self.info["subtasks"] = []
+
+        # Subtask (atomic action) labeling, see `start_subtask` / `subtask`.
+        self.subtask_records = []
+        self._active_subtask = None
 
         self.stage_success_tag = False
 
@@ -1726,6 +1732,120 @@ class Base_Task(gym.Env):
             # print(f"Saving image with episode_num={episode_num}, filename: {filename}, path: {generate_dir}")
         
         return image_data
+
+    # ============================== Subtask Labeling ==============================
+    # A subtask is one atomic robot action (e.g. "pick the red block with the left
+    # arm"). Tasks annotate `play_once` with `self.subtask(...)` so that every frame
+    # of the recorded episode can be mapped back to the action being executed.
+    # Only the frame indices of the transitions are stored (the "key frames"); the
+    # language instruction of each subtask is generated afterwards by
+    # `description/utils/generate_subtask_instructions.py`.
+
+    @staticmethod
+    def _format_subtask_info(info):
+        """Normalize a subtask parameter dict to `{"{A}": "red block"}` style."""
+        if not info:
+            return {}
+        formatted = {}
+        for key, value in info.items():
+            key = str(key)
+            if not (key.startswith("{") and key.endswith("}")):
+                key = "{" + key + "}"
+            formatted[key] = str(value)
+        return formatted
+
+    def start_subtask(self, action, info=None, **kwargs):
+        """
+        Open a new subtask segment starting at the current recording frame.
+        Closes the previously opened subtask, if any.
+
+        - `action`: name of the atomic action, e.g. "pick" / "place". It selects the
+          instruction templates in `description/subtask_instruction/`.
+        - `info`: placeholder values of the instruction templates, e.g.
+          `{"{A}": "red block", "{a}": "left"}`. Keys may be given with or without
+          braces, extra keyword arguments are merged in.
+        """
+        self.end_subtask()
+        params = dict(info) if info else {}
+        params.update(kwargs)
+        record = {
+            "index": len(self.subtask_records),
+            "action": str(action),
+            "start_frame": int(self.FRAME_IDX),
+            "end_frame": None,
+            "info": self._format_subtask_info(params),
+        }
+        self.subtask_records.append(record)
+        self._active_subtask = record
+        return record
+
+    def end_subtask(self):
+        """Close the subtask that is currently open (no-op if there is none)."""
+        if self._active_subtask is not None:
+            self._active_subtask["end_frame"] = int(self.FRAME_IDX)
+            self._active_subtask = None
+
+    @contextmanager
+    def subtask(self, action, info=None, **kwargs):
+        """Context manager flavour of `start_subtask` / `end_subtask`."""
+        self.start_subtask(action, info, **kwargs)
+        try:
+            yield self._active_subtask
+        finally:
+            self.end_subtask()
+
+    def get_subtask_key_frames(self):
+        """Sorted frame indices at which the executed action changes."""
+        key_frames = set()
+        for record in self.subtask_records:
+            key_frames.add(int(record["start_frame"]))
+            if record["end_frame"] is not None:
+                key_frames.add(int(record["end_frame"]))
+        return sorted(key_frames)
+
+    def finalize_subtasks(self):
+        """
+        Close the last open subtask and publish the segments in `self.info`.
+        Idempotent, so a task may call it at the end of `play_once` itself.
+        """
+        self.end_subtask()
+        segments = []
+        for record in self.subtask_records:
+            end_frame = record["end_frame"]
+            if end_frame is None:
+                end_frame = int(self.FRAME_IDX)
+            # Empty segments carry no frame, they would only confuse the splitting.
+            if end_frame <= record["start_frame"] and self.save_data:
+                continue
+            segment = deepcopy(record)
+            segment["end_frame"] = int(end_frame)
+            segment["index"] = len(segments)
+            segments.append(segment)
+        self.info["subtasks"] = segments
+        return segments
+
+    def save_subtask_data(self, idx=None):
+        """
+        Write the key frames of the episode next to the collected data, as
+        `<save_dir>/subtasks/episode<idx>.json`.
+        """
+        if not self.save_data:
+            return None
+        segments = self.finalize_subtasks()
+        if not segments:
+            return None
+        idx = self.ep_num if idx is None else idx
+        file_path = os.path.join(self.save_dir, "subtasks", f"episode{idx}.json")
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        subtask_data = {
+            "episode_index": int(idx),
+            "num_frames": int(self.FRAME_IDX),
+            "key_frames": self.get_subtask_key_frames(),
+            "subtasks": segments,
+        }
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(subtask_data, f, ensure_ascii=False, indent=4)
+        return subtask_data
 
     def stop_recording(self):
         self.record_path = False

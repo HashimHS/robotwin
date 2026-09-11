@@ -42,18 +42,21 @@ class stack_blocks_three(Base_Task):
                 )
             block_pose_lst.append(deepcopy(block_pose))
 
-        def create_block(block_pose, color):
-            return create_box(
+        def create_block(block_pose, color, name):
+            block = create_box(
                 scene=self,
                 pose=block_pose,
                 half_size=(block_half_size, block_half_size, block_half_size),
                 color=color,
-                name="box",
+                name=name,
             )
+            # Used as {A} / {B} of the subtask language instructions.
+            block.name = name
+            return block
 
-        self.block1 = create_block(block_pose_lst[0], (1, 0, 0))
-        self.block2 = create_block(block_pose_lst[1], (0, 1, 0))
-        self.block3 = create_block(block_pose_lst[2], (0, 0, 1))
+        self.block1 = create_block(block_pose_lst[0], (1, 0, 0), name="red block")
+        self.block2 = create_block(block_pose_lst[1], (0, 1, 0), name="green block")
+        self.block3 = create_block(block_pose_lst[2], (0, 0, 1), name="blue block")
         self.add_prohibit_area(self.block1, padding=0.05)
         self.add_prohibit_area(self.block2, padding=0.05)
         self.add_prohibit_area(self.block3, padding=0.05)
@@ -82,38 +85,46 @@ class stack_blocks_three(Base_Task):
             "{b}": str(arm_tag2),
             "{c}": str(arm_tag3),
         }
+        # Key frames of the transitions between the atomic actions.
+        self.finalize_subtasks()
         return self.info
 
     def pick_and_place_block(self, block: Actor):
         block_pose = block.get_pose().p
         arm_tag = ArmTag("left" if block_pose[0] < 0 else "right")
 
-        if self.last_gripper is not None and (self.last_gripper != arm_tag):
-            self.move(
-                self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09),  # arm_tag
-                self.back_to_origin(arm_tag=arm_tag.opposite),  # arm_tag.opposite
-            )
-        else:
-            self.move(self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09))  # arm_tag
+        # ---- subtask: pick the block ----
+        with self.subtask("pick", {"{A}": block.name, "{a}": str(arm_tag)}):
+            if self.last_gripper is not None and (self.last_gripper != arm_tag):
+                self.move(
+                    self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09),  # arm_tag
+                    self.back_to_origin(arm_tag=arm_tag.opposite),  # arm_tag.opposite
+                )
+            else:
+                self.move(self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09))  # arm_tag
 
-        self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07))  # arm_tag
+            self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07))  # arm_tag
 
         if self.last_actor is None:
             target_pose = [0, 0, 0.75 + self.table_z_bias, 0, 1, 0, 0]
+            target_name = "center of the table"
         else:
             target_pose = self.last_actor.get_functional_point(1)
+            target_name = self.last_actor.name
 
-        self.move(
-            self.place_actor(
-                block,
-                target_pose=target_pose,
-                arm_tag=arm_tag,
-                functional_point_id=0,
-                pre_dis=0.05,
-                dis=0.,
-                pre_dis_axis="fp",
-            ))
-        self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07))  # arm_tag
+        # ---- subtask: place the block on its target ----
+        with self.subtask("place", {"{A}": block.name, "{B}": target_name, "{a}": str(arm_tag)}):
+            self.move(
+                self.place_actor(
+                    block,
+                    target_pose=target_pose,
+                    arm_tag=arm_tag,
+                    functional_point_id=0,
+                    pre_dis=0.05,
+                    dis=0.,
+                    pre_dis_axis="fp",
+                ))
+            self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07))  # arm_tag
 
         self.last_gripper = arm_tag
         self.last_actor = block

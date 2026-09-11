@@ -3,7 +3,6 @@ from .utils import *
 import sapien
 import math
 import numpy as np
-import random
 
 
 class blocks_ranking_rgb_r(Base_Task):
@@ -17,7 +16,7 @@ class blocks_ranking_rgb_r(Base_Task):
             for i in range(3):
                 block_pose = rand_pose(
                     xlim=[-0.28, 0.28],
-                    ylim=[-0.08, 0.05],
+                    ylim=[0.0, 0.1],
                     zlim=[0.765],
                     qpos=[1, 0, 0, 0],
                     ylim_prop=True,
@@ -35,7 +34,7 @@ class blocks_ranking_rgb_r(Base_Task):
                        or not check_block_pose(block_pose)):
                     block_pose = rand_pose(
                         xlim=[-0.28, 0.28],
-                        ylim=[-0.08, 0.05],
+                        ylim=[0.0, 0.1],
                         zlim=[0.765],
                         qpos=[1, 0, 0, 0],
                         ylim_prop=True,
@@ -63,8 +62,9 @@ class blocks_ranking_rgb_r(Base_Task):
         }
 
         # We shuffle the order of blocks to increase the diversity of demonstrations.
-        block_indices = [0, 1, 2]
-        random.shuffle(block_indices)
+        # `np.random` is seeded with the episode seed (`random` is not), so the episode
+        # is reproducible from its seed.
+        block_indices = [int(i) for i in np.random.permutation(3)]
         colors = [blocks[i]["color"] for i in block_indices]
         names = [blocks[i]["name"] for i in block_indices]
 
@@ -100,11 +100,11 @@ class blocks_ranking_rgb_r(Base_Task):
         self.prohibited_area.append([-0.17, -0.22, 0.17, -0.12])
 
         # Generate random y position for all blocks
-        y_pose = np.random.uniform(-0.2, -0.1)
+        y_pose = -0.12
 
         # Define target poses for each block with random x positions
         self.block1_target_pose = [
-            np.random.uniform(-0.09, -0.08),
+            np.random.uniform(-0.11, -0.1),
             y_pose,
             0.74 + self.table_z_bias,
         ] + [0, 1, 0, 0]
@@ -114,7 +114,7 @@ class blocks_ranking_rgb_r(Base_Task):
             0.74 + self.table_z_bias,
         ] + [0, 1, 0, 0]
         self.block3_target_pose = [
-            np.random.uniform(0.08, 0.09),
+            np.random.uniform(0.10, 0.11),
             y_pose,
             0.74 + self.table_z_bias,
         ] + [0, 1, 0, 0]
@@ -130,10 +130,11 @@ class blocks_ranking_rgb_r(Base_Task):
         # Initialize last gripper state
         self.last_gripper = None
 
-        # Pick and place each block to their target positions
-        arm_tag1 = self.pick_and_place_block(self.block1, self.block1_target_pose)
-        arm_tag2 = self.pick_and_place_block(self.block2, self.block2_target_pose)
-        arm_tag3 = self.pick_and_place_block(self.block3, self.block3_target_pose)
+        # Pick and place each block to their target positions. The targets are the
+        # three slots of the row, from left to right.
+        arm_tag1 = self.pick_and_place_block(self.block1, self.block1_target_pose, "left position")
+        arm_tag2 = self.pick_and_place_block(self.block2, self.block2_target_pose, "middle position")
+        arm_tag3 = self.pick_and_place_block(self.block3, self.block3_target_pose, "right position")
 
         # Store information about the blocks and which arms were used
         self.info["info"] = {
@@ -144,33 +145,39 @@ class blocks_ranking_rgb_r(Base_Task):
             "{b}": arm_tag2,
             "{c}": arm_tag3,
         }
+        # Key frames of the transitions between the atomic actions.
+        self.finalize_subtasks()
         return self.info
 
-    def pick_and_place_block(self, block, target_pose=None):
+    def pick_and_place_block(self, block, target_pose=None, target_name=None):
         block_pose = block.get_pose().p
         arm_tag = ArmTag("left" if block_pose[0] < 0 else "right")
 
-        if self.last_gripper is not None and (self.last_gripper != arm_tag):
+        # ---- subtask: pick the block ----
+        with self.subtask("pick", {"{A}": block.name, "{a}": str(arm_tag)}):
+            if self.last_gripper is not None and (self.last_gripper != arm_tag):
+                self.move(
+                    self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09, grasp_dis=0.01),  # arm_tag
+                    self.back_to_origin(arm_tag=arm_tag.opposite),  # arm_tag.opposite
+                )
+            else:
+                self.move(self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09))  # arm_tag
+
+            self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.09))  # arm_tag
+
+        # ---- subtask: place the block in its slot of the row ----
+        with self.subtask("place", {"{A}": block.name, "{B}": target_name, "{a}": str(arm_tag)}):
             self.move(
-                self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09, grasp_dis=0.01),  # arm_tag
-                self.back_to_origin(arm_tag=arm_tag.opposite),  # arm_tag.opposite
-            )
-        else:
-            self.move(self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09))  # arm_tag
-
-        self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07))  # arm_tag
-
-        self.move(
-            self.place_actor(
-                block,
-                target_pose=target_pose,
-                arm_tag=arm_tag,
-                functional_point_id=0,
-                pre_dis=0.09,
-                dis=0.02,
-                constrain="align",
-            ))
-        self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07, move_axis="arm"))  # arm_tag
+                self.place_actor(
+                    block,
+                    target_pose=target_pose,
+                    arm_tag=arm_tag,
+                    functional_point_id=0,
+                    pre_dis=0.09,
+                    dis=0.02,
+                    constrain="align",
+                ))
+            self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.09, move_axis="arm"))  # arm_tag
 
         self.last_gripper = arm_tag
         return str(arm_tag)
@@ -184,5 +191,5 @@ class blocks_ranking_rgb_r(Base_Task):
 
         return (np.all(abs(block1_pose[:2] - block2_pose[:2]) < eps)
                 and np.all(abs(block2_pose[:2] - block3_pose[:2]) < eps) and block1_pose[0] < block2_pose[0]
-                and block2_pose[0] < block3_pose[0])
-                # and self.is_left_gripper_open() and self.is_right_gripper_open())
+                and block2_pose[0] < block3_pose[0]
+                and self.is_left_gripper_open() and self.is_right_gripper_open())

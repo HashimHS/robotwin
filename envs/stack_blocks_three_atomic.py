@@ -2,10 +2,17 @@ from ._base_task import Base_Task
 from .utils import *
 import sapien
 import math
-import random
 
 
 class stack_blocks_three_atomic(Base_Task):
+    """
+    Same manipulation as `stack_blocks_three`, but the order in which the blocks are
+    stacked is randomized to increase the diversity of the demonstrations.
+
+    The whole episode is recorded. Every atomic action (pick / place) is labeled with
+    `self.subtask(...)`, so the key frames of the transitions are stored next to the
+    trajectory and the episode can be split per action afterwards.
+    """
 
     def setup_demo(self, **kwags):
         super()._init_task_env_(**kwags)
@@ -43,114 +50,100 @@ class stack_blocks_three_atomic(Base_Task):
                 )
             block_pose_lst.append(deepcopy(block_pose))
 
-        def create_block(block_pose, color):
-            return create_box(
+        def create_block(block_pose, color, name):
+            block = create_box(
                 scene=self,
                 pose=block_pose,
                 half_size=(block_half_size, block_half_size, block_half_size),
                 color=color,
-                name="box",
+                name=name,
             )
+            # Used as {A} / {B} of the subtask language instructions.
+            block.name = name
+            return block
 
-        self.block1 = create_block(block_pose_lst[0], (1, 0, 0))
-        self.block1.name = "red block"
-        self.block2 = create_block(block_pose_lst[1], (0, 1, 0))
-        self.block2.name = "green block"
-        self.block3 = create_block(block_pose_lst[2], (0, 0, 1))
-        self.block3.name = "blue block"
-        self.add_prohibit_area(self.block1, padding=0.05)
-        self.add_prohibit_area(self.block2, padding=0.05)
-        self.add_prohibit_area(self.block3, padding=0.05)
+        red_block = create_block(block_pose_lst[0], (1, 0, 0), name="red block")
+        green_block = create_block(block_pose_lst[1], (0, 1, 0), name="green block")
+        blue_block = create_block(block_pose_lst[2], (0, 0, 1), name="blue block")
+
+        self.add_prohibit_area(red_block, padding=0.05)
+        self.add_prohibit_area(green_block, padding=0.05)
+        self.add_prohibit_area(blue_block, padding=0.05)
         target_pose = [-0.04, 0, 0.04, -0.05]
         self.prohibited_area.append(target_pose)
         self.block1_target_pose = [0, 0, 0.75 + self.table_z_bias, 0, 1, 0, 0]
 
-        # We shuffle the order of blocks to increase the diversity of demonstrations.
-        blocks = [self.block1, self.block2, self.block3]
-        random.shuffle(blocks)
+        # We shuffle the order of the blocks to increase the diversity of demonstrations.
+        # `np.random` is seeded with the episode seed (`random` is not), so that the
+        # collection phase replays exactly the trajectory planned in the seed phase.
+        blocks = [red_block, green_block, blue_block]
+        blocks = [blocks[i] for i in np.random.permutation(len(blocks))]
 
+        # block1 is stacked on the table, block2 on block1 and block3 on block2.
         self.block1 = blocks[0]
         self.block2 = blocks[1]
         self.block3 = blocks[2]
 
-        # We pick a random record list to determine which block's pick-and-place process will be recorded.
-        self.record_list = [True, False, False]
-        random.shuffle(self.record_list)
-        
-
     def play_once(self):
-        self.stop_recording()
         self.last_gripper = None
         self.last_actor = None
 
-        arm_tag1 = self.pick_and_place_block_atomic(self.block1, record=self.record_list[0])
-        arm_tag2 = self.pick_and_place_block_atomic(self.block2, record=self.record_list[1])
-        arm_tag3 = self.pick_and_place_block_atomic(self.block3, record=self.record_list[2])
-        self.start_recording()
+        arm_tag1 = self.pick_and_place_block(self.block1)
+        arm_tag2 = self.pick_and_place_block(self.block2)
+        arm_tag3 = self.pick_and_place_block(self.block3)
 
-        # self.info["info"] = {
-        #     "{A}": self.block1.name,
-        #     "{B}": self.block2.name,
-        #     "{C}": self.block3.name,
-        #     "{a}": str(arm_tag1),
-        #     "{b}": str(arm_tag2),
-        #     "{c}": str(arm_tag3),
-        # }
+        # Description of the whole episode, {A} is stacked first and {C} last.
+        self.info["info"] = {
+            "{A}": self.block1.name,
+            "{B}": self.block2.name,
+            "{C}": self.block3.name,
+            "{a}": str(arm_tag1),
+            "{b}": str(arm_tag2),
+            "{c}": str(arm_tag3),
+        }
+        # Key frames of the transitions between the atomic actions.
+        self.finalize_subtasks()
         return self.info
 
-    def pick_and_place_block_atomic(self, block, record=False):
-
+    def pick_and_place_block(self, block: Actor):
         block_pose = block.get_pose().p
         arm_tag = ArmTag("left" if block_pose[0] < 0 else "right")
 
-        if self.last_gripper is not None and (self.last_gripper != arm_tag):
-            self.move(
-                self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09),
-                self.back_to_origin(arm_tag=arm_tag.opposite),
-            )
-        else:
-            self.move(self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09))
+        # ---- subtask: pick the block ----
+        with self.subtask("pick", {"{A}": block.name, "{a}": str(arm_tag)}):
+            if self.last_gripper is not None and (self.last_gripper != arm_tag):
+                self.move(
+                    self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09),
+                    self.back_to_origin(arm_tag=arm_tag.opposite),
+                )
+            else:
+                self.move(self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09))
 
-        self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07))
+            self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07))
 
         if self.last_actor is None:
             target_pose = [0, 0, 0.75 + self.table_z_bias, 0, 1, 0, 0]
-
-            if record:
-                self.start_recording()
-                self.info["info"] = {
-                    "{A}": block.name,
-                    "{a}": str(arm_tag),
-                    "{B}": "center of the table",
-                }
-
+            target_name = "center of the table"
         else:
             target_pose = self.last_actor.get_functional_point(1)
+            target_name = self.last_actor.name
 
-            if record:
-                self.start_recording()
-                self.info["info"] = {
-                    "{A}": block.name,
-                    "{a}": str(arm_tag),
-                    "{B}": self.last_actor.name,
-                    "{b}": str(self.last_gripper),
-                }
-
-        self.move(
-            self.place_actor(
-                block,
-                target_pose=target_pose,
-                arm_tag=arm_tag,
-                functional_point_id=0,
-                pre_dis=0.05,
-                dis=0.,
-                pre_dis_axis="fp",
-            ))
-        self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07))
+        # ---- subtask: place the block on its target ----
+        with self.subtask("place", {"{A}": block.name, "{B}": target_name, "{a}": str(arm_tag)}):
+            self.move(
+                self.place_actor(
+                    block,
+                    target_pose=target_pose,
+                    arm_tag=arm_tag,
+                    functional_point_id=0,
+                    pre_dis=0.05,
+                    dis=0.,
+                    pre_dis_axis="fp",
+                ))
+            self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07))
 
         self.last_gripper = arm_tag
         self.last_actor = block
-        self.stop_recording()
         return str(arm_tag)
 
     def check_success(self):

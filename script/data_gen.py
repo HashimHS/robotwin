@@ -1,4 +1,4 @@
-from collect_data import *
+from .collect_data import *
 import time
 import pandas as pd
 

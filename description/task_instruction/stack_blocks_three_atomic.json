@@ -1,11 +1,11 @@
 {
-  "full_description": "there are three colored blocks on the table, stack them in order red on table, green on red, blue on green",
-  "schema": "{A} notifies the red block, {B} notifies the green block, {C} notifies the blue block, {a} notifies the arm to manipulate the red block, {b} notifies the arm to manipulate the green block, {c} notifies the arm to manipulate the blue block",
+  "full_description": "there are three colored blocks on the table, <move the blocks to the center of the table>, and <stack them in the order given by the instruction>",
+  "schema": "{A} notifies the block placed at the center of the table, {B} notifies the block stacked on {A}, {C} notifies the block stacked on {B}, {a}, {b} and {c} notify the arms used to manipulate {A}, {B} and {C}. The stacking order is randomized per episode, the per action instructions are generated separately from description/subtask_instruction/stack_blocks_three_atomic.json",
   "preference": "fixed single instruction matching BT output",
   "seen": [
-    "place {A} on {B} with {a} arm!"
+    "Stack the blocks on top of each other in the order {A}, {B}, {C} starting from the bottom."
   ],
   "unseen": [
-    "place {A} on {B} with {a} arm!"
+    "Stack the blocks on top of each other in the order {A}, {B}, {C} starting from the bottom."
   ]
 }

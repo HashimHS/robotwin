@@ -219,10 +219,14 @@ def run(TASK_ENV, args):
                 info_db = json.load(file)
 
             info = TASK_ENV.play_once()
+            # Close the last subtask segment and publish the key frames in `info`.
+            TASK_ENV.finalize_subtasks()
             info_db[f"episode_{episode_idx}"] = info
 
             with open(info_file_path, "w", encoding="utf-8") as file:
                 json.dump(info_db, file, ensure_ascii=False, indent=4)
+
+            TASK_ENV.save_subtask_data(episode_idx)
 
             TASK_ENV.close_env(clear_cache=((episode_idx + 1) % clear_cache_freq == 0))
             TASK_ENV.merge_pkl_to_hdf5_video()
@@ -231,6 +235,13 @@ def run(TASK_ENV, args):
 
         command = f"cd description && bash gen_episode_instructions.sh {args['task_name']} {args['task_config']} {args['language_num']}"
         os.system(command)
+
+        # Language instructions of every atomic action of the episodes, generated
+        # from the key frames saved in `<save_path>/subtasks/`.
+        if os.path.isdir(os.path.join(args["save_path"], "subtasks")):
+            command = (f"cd description && bash gen_subtask_instructions.sh "
+                       f"{args['task_name']} {args['task_config']} {args['language_num']}")
+            os.system(command)
 
 
 if __name__ == "__main__":

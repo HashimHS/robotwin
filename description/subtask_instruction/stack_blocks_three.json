@@ -1,0 +1,50 @@
+{
+    "_comment": [
+        "Task specific atomic action instructions for the block stacking tasks.",
+        "Actions that are not listed here fall back to `_default.json`."
+    ],
+    "pick": {
+        "schema": "{A} is the block being picked up, {a} is the arm that picks it up",
+        "seen": [
+            "Pick up {A} with {a}.",
+            "Grasp {A} using {a}.",
+            "Use {a} to pick up {A}.",
+            "Take {A} with {a}.",
+            "Grab {A} using {a}.",
+            "With {a}, pick up {A}.",
+            "Close {a} around {A} and lift it.",
+            "Pick {A} off the table with {a}.",
+            "Reach for {A} and grasp it with {a}.",
+            "Lift {A} from the table using {a}."
+        ],
+        "unseen": [
+            "Seize {A} with {a}.",
+            "Get hold of {A} using {a}.",
+            "Employ {a} to grasp {A}.",
+            "Collect {A} with {a}.",
+            "Hold {A} using {a}."
+        ]
+    },
+    "place": {
+        "schema": "{A} is the block being placed, {B} is where it is placed, {a} is the arm that places it",
+        "seen": [
+            "Place {A} on {B} with {a}.",
+            "Stack {A} on {B} using {a}.",
+            "Put {A} on {B} with {a}.",
+            "Use {a} to place {A} on {B}.",
+            "Set {A} down on {B} with {a}.",
+            "With {a}, stack {A} onto {B}.",
+            "Lower {A} onto {B} using {a}.",
+            "Release {A} onto {B} with {a}.",
+            "Move {A} onto {B} with {a}.",
+            "Pile {A} on {B} using {a}."
+        ],
+        "unseen": [
+            "Deposit {A} on {B} with {a}.",
+            "Rest {A} on {B} using {a}.",
+            "Position {A} onto {B} with {a}.",
+            "Settle {A} on {B} using {a}.",
+            "Leave {A} on {B} with {a}."
+        ]
+    }
+}

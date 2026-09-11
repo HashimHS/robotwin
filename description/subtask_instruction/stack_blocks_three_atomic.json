@@ -1,0 +1,25 @@
+{
+    "_comment": [
+        "Atomic action instructions for the block stacking task.",
+        "One fixed instruction per action (seen == unseen), matching the behaviour tree output.",
+        "Actions that are not listed here fall back to `_default.json`."
+    ],
+    "pick": {
+        "schema": "{A} is the block being picked up, {a} is the arm that picks it up",
+        "seen": [
+            "Pick up {A} with {a}."
+        ],
+        "unseen": [
+            "Pick up {A} with {a}."
+        ]
+    },
+    "place": {
+        "schema": "{A} is the block being placed, {B} is where it is placed, {a} is the arm that places it",
+        "seen": [
+            "Place {A} on {B} with {a}."
+        ],
+        "unseen": [
+            "Place {A} on {B} with {a}."
+        ]
+    }
+}

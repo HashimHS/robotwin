@@ -54,10 +54,12 @@ def get_camera_config(camera_type):
     return args[camera_type]
 
 
-def get_embodiment_config(robot_file):
+def get_embodiment_config(robot_file, gripper_bias=None):
     robot_config_file = os.path.join(robot_file, "config.yml")
     with open(robot_config_file, "r", encoding="utf-8") as f:
         embodiment_args = yaml.load(f.read(), Loader=yaml.FullLoader)
+    if gripper_bias is not None:
+        embodiment_args["gripper_bias"] = gripper_bias
     return embodiment_args
 
 
@@ -113,8 +115,9 @@ def main(usr_args):
     else:
         raise "embodiment items should be 1 or 3"
 
-    args["left_embodiment_config"] = get_embodiment_config(args["left_robot_file"])
-    args["right_embodiment_config"] = get_embodiment_config(args["right_robot_file"])
+    gripper_bias = usr_args.get("gripper_bias")
+    args["left_embodiment_config"] = get_embodiment_config(args["left_robot_file"], gripper_bias)
+    args["right_embodiment_config"] = get_embodiment_config(args["right_robot_file"], gripper_bias)
 
     if len(embodiment_type) == 1:
         embodiment_name = str(embodiment_type[0])
@@ -176,11 +179,11 @@ def main(usr_args):
     topk_success_rate = sorted(suc_nums, reverse=True)[:topk]
 
     file_path = os.path.join(save_dir, f"_result.txt")
-    with open(file_path, "w") as file:
-        file.write(f"Timestamp: {current_time}\n\n")
-        file.write(f"Instruction Type: {instruction_type}\n\n")
-        # file.write(str(task_reward) + '\n')
-        file.write("\n".join(map(str, np.array(suc_nums) / test_num)))
+    # with open(file_path, "w") as file:
+    #     file.write(f"Timestamp: {current_time}\n\n")
+    #     file.write(f"Instruction Type: {instruction_type}\n\n")
+    #     # file.write(str(task_reward) + '\n')
+    #     file.write("\n".join(map(str, np.array(suc_nums) / test_num)))
 
     print(f"Data has been saved to {file_path}")
     # return task_reward
@@ -204,6 +207,7 @@ def eval_policy(task_name,
     now_id = 0
     succ_seed = 0
     suc_test_seed_list = []
+    failure_count = {}
 
     policy_name = args["policy_name"]
     eval_func = eval_function_decorator(policy_name, "eval")
@@ -214,6 +218,13 @@ def eval_policy(task_name,
     clear_cache_freq = args["clear_cache_freq"]
 
     args["eval_mode"] = True
+
+    result_file_path = os.path.join(args["eval_video_save_dir"], f"_result.txt")
+    with open(result_file_path, "w") as file:
+            file.write(f"Model Config: {model.train_config_name}\n")
+            file.write(f"Model Name: {model.model_name}\n")
+            file.write(f"Checkpoint ID: {model.checkpoint_id}\n")
+            file.write(f"Action Horizon: {model.pi0_step}\n\n")
 
     while succ_seed < test_num:
         render_freq = args["render_freq"]
@@ -315,6 +326,22 @@ def eval_policy(task_name,
             TASK_ENV.viewer.close()
 
         TASK_ENV.test_num += 1
+
+        # save success rate and model details into text file
+        result_file_path = os.path.join(args["eval_video_save_dir"], f"_result.txt")
+        with open(result_file_path, "a") as file:
+            file.write(f"Episode {TASK_ENV.test_num-1} | Seed: {now_seed} | Instruction: {instruction}\n")
+            file.write(f"Episode {TASK_ENV.test_num-1} => {'Success' if succ else 'Fail'}\n")
+            if not succ:
+                TASK_ENV.failure_info = TASK_ENV.get_failure_info()
+                file.write(f"Failure Info: {TASK_ENV.failure_info}\n")
+                if TASK_ENV.failure_info in failure_count:
+                    failure_count[TASK_ENV.failure_info] += 1
+                else:
+                    failure_count[TASK_ENV.failure_info] = 1
+            file.write(f"Current Success Rate: {TASK_ENV.suc}/{TASK_ENV.test_num} => "
+                       f"{round(TASK_ENV.suc / TASK_ENV.test_num * 100, 1)}%\n")
+            file.write(f"current failure count: {failure_count}\n\n")
 
         print(
             f"\033[93m{task_name}\033[0m | \033[94m{args['policy_name']}\033[0m | \033[92m{args['task_config']}\033[0m | \033[91m{args['ckpt_setting']}\033[0m\n"

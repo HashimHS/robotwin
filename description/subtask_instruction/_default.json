@@ -1,0 +1,172 @@
+{
+    "_comment": [
+        "Language instruction templates for atomic actions (subtasks).",
+        "The action names are the ones passed to `Base_Task.start_subtask` / `Base_Task.subtask`.",
+        "Templates of a task can be overridden by adding `description/subtask_instruction/<task_name>.json`;",
+        "an action missing from the task file falls back to the templates below.",
+        "Placeholders are filled from the `info` dict of the subtask. `{a}`, `{b}`, ... are arm tags",
+        "and are rendered as 'the left arm' / 'the right arm', every other placeholder is rendered as",
+        "'the <value>' (or the object description of `objects_description/<value>.json` when it exists),",
+        "so templates must NOT write the article themselves.",
+        "A template whose placeholders are not all provided by the subtask is skipped."
+    ],
+    "pick": {
+        "schema": "{A} is the object being picked up, {a} is the arm that picks it up",
+        "seen": [
+            "Pick up {A} with {a}.",
+            "Grasp {A} using {a}.",
+            "Use {a} to pick up {A}.",
+            "Take {A} with {a}.",
+            "Lift {A} with {a}.",
+            "Grab {A} using {a}.",
+            "With {a}, pick up {A}.",
+            "Reach for {A} and grasp it with {a}.",
+            "Close {a} around {A} and lift it.",
+            "Pick {A} off the table with {a}."
+        ],
+        "unseen": [
+            "Seize {A} with {a}.",
+            "Hold {A} using {a}.",
+            "Employ {a} to grasp {A}.",
+            "Collect {A} with {a}.",
+            "Get hold of {A} using {a}."
+        ]
+    },
+    "place": {
+        "schema": "{A} is the object being placed, {B} is the target it is placed on, {a} is the arm that places it",
+        "seen": [
+            "Place {A} on {B} with {a}.",
+            "Put {A} on {B} using {a}.",
+            "Use {a} to place {A} on {B}.",
+            "Set {A} down on {B} with {a}.",
+            "Stack {A} on {B} with {a}.",
+            "With {a}, put {A} onto {B}.",
+            "Lower {A} onto {B} using {a}.",
+            "Release {A} onto {B} with {a}.",
+            "Move {A} onto {B} with {a}.",
+            "Drop {A} gently on {B} with {a}."
+        ],
+        "unseen": [
+            "Deposit {A} on {B} with {a}.",
+            "Rest {A} on {B} using {a}.",
+            "Position {A} onto {B} with {a}.",
+            "Settle {A} on {B} using {a}.",
+            "Leave {A} on {B} with {a}."
+        ]
+    },
+    "move": {
+        "schema": "{A} is the object being moved, {B} is the destination, {a} is the arm that moves it",
+        "seen": [
+            "Move {A} to {B} with {a}.",
+            "Bring {A} to {B} using {a}.",
+            "Use {a} to move {A} to {B}.",
+            "Transfer {A} to {B} with {a}.",
+            "Shift {A} to {B} using {a}.",
+            "With {a}, relocate {A} to {B}."
+        ],
+        "unseen": [
+            "Carry {A} over to {B} with {a}.",
+            "Take {A} to {B} using {a}.",
+            "Reposition {A} at {B} with {a}."
+        ]
+    },
+    "lift": {
+        "schema": "{A} is the object being lifted, {a} is the arm that lifts it",
+        "seen": [
+            "Lift {A} with {a}.",
+            "Raise {A} using {a}.",
+            "Use {a} to lift {A} up.",
+            "Pick {A} up into the air with {a}."
+        ],
+        "unseen": [
+            "Elevate {A} with {a}.",
+            "Hoist {A} using {a}."
+        ]
+    },
+    "push": {
+        "schema": "{A} is the object being pushed, {a} is the arm that pushes it",
+        "seen": [
+            "Push {A} with {a}.",
+            "Use {a} to push {A}.",
+            "Shove {A} using {a}.",
+            "With {a}, push {A} away."
+        ],
+        "unseen": [
+            "Nudge {A} with {a}.",
+            "Press {A} forward using {a}."
+        ]
+    },
+    "pull": {
+        "schema": "{A} is the object being pulled, {a} is the arm that pulls it",
+        "seen": [
+            "Pull {A} with {a}.",
+            "Use {a} to pull {A}.",
+            "Drag {A} using {a}.",
+            "With {a}, pull {A} closer."
+        ],
+        "unseen": [
+            "Draw {A} towards you with {a}.",
+            "Tug {A} using {a}."
+        ]
+    },
+    "open": {
+        "schema": "{A} is the object being opened, {a} is the arm that opens it",
+        "seen": [
+            "Open {A} with {a}.",
+            "Use {a} to open {A}.",
+            "With {a}, open {A}."
+        ],
+        "unseen": [
+            "Pull {A} open using {a}.",
+            "Unfasten {A} with {a}."
+        ]
+    },
+    "close": {
+        "schema": "{A} is the object being closed, {a} is the arm that closes it",
+        "seen": [
+            "Close {A} with {a}.",
+            "Use {a} to close {A}.",
+            "With {a}, close {A}."
+        ],
+        "unseen": [
+            "Shut {A} using {a}.",
+            "Push {A} closed with {a}."
+        ]
+    },
+    "press": {
+        "schema": "{A} is the object being pressed, {a} is the arm that presses it",
+        "seen": [
+            "Press {A} with {a}.",
+            "Use {a} to press {A}.",
+            "Push down on {A} with {a}."
+        ],
+        "unseen": [
+            "Depress {A} using {a}.",
+            "Tap {A} with {a}."
+        ]
+    },
+    "handover": {
+        "schema": "{A} is the object being handed over, {a} is the arm giving it, {b} is the arm receiving it",
+        "seen": [
+            "Hand {A} from {a} to {b}.",
+            "Pass {A} over from {a} to {b}.",
+            "Transfer {A} from {a} to {b}."
+        ],
+        "unseen": [
+            "Give {A} from {a} to {b}.",
+            "Exchange {A} between {a} and {b}."
+        ]
+    },
+    "back_to_origin": {
+        "schema": "{a} is the arm returning to its rest pose",
+        "seen": [
+            "Move {a} back to its home position.",
+            "Return {a} to the origin.",
+            "Bring {a} back to the rest pose."
+        ],
+        "unseen": [
+            "Retract {a} to its starting pose.",
+            "Send {a} home."
+        ]
+    }
+}

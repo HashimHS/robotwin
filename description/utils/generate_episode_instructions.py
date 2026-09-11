@@ -79,6 +79,8 @@ def replace_placeholders(instruction: str, episode_params: Dict[str, str]) -> st
         elif len(key) == 1 and "a" <= key <= "z":
             value = f"the {value} arm"
         else:
+            if value == "center of the table":
+                value = "the center"
             value = f"{value}"
 
         instruction = instruction.replace(placeholder, value)
@@ -124,6 +126,8 @@ def replace_placeholders_unseen(instruction: str, episode_params: Dict[str, str]
         elif len(key) == 1 and "a" <= key <= "z":
             value = f"the {value} arm"
         else:
+            if value == "center of the table":
+                value = "the center"
             value = f"{value}"
 
         instruction = instruction.replace(placeholder, value)
@@ -165,9 +169,10 @@ def extract_episodes_from_scene_info(scene_info: Dict) -> List[Dict[str, str]]:
     return episodes
 
 
-def save_episode_descriptions(task_name: str, setting: str, generated_descriptions: List[Dict]):
+def save_episode_descriptions(task_name: str, setting: str, generated_descriptions: List[Dict],
+                              save_path: str = "data"):
     """Save generated descriptions to output files."""
-    output_dir = os.path.join(parent_directory, f"../../data/{task_name}/{setting}/instructions")
+    output_dir = os.path.join(parent_directory, f"../../{save_path}/{task_name}/{setting}/instructions")
     os.makedirs(output_dir, exist_ok=True)
 
     for episode_desc in generated_descriptions:
@@ -275,5 +280,5 @@ if __name__ == "__main__":
     results = generate_episode_descriptions(args.task_name, episodes, args.max_num)
 
     # Save results to output files
-    save_episode_descriptions(args.task_name, args.setting, results)
+    save_episode_descriptions(args.task_name, args.setting, results, args_dict["save_path"])
     print("Successfully Saved Instructions")

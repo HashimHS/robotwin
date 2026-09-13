@@ -35,7 +35,7 @@ def stack(count):
 
     def builder(behaviors, object_dict, world_interface):
         _require_objects(object_dict, count)
-        conditions = [at_pos(behaviors, world_interface, object_dict[1], "on", "the center")]
+        conditions = [at_pos(behaviors, world_interface, object_dict[1], "on", "center")]
         for index in range(2, count + 1):
             conditions.append(
                 at_pos(behaviors, world_interface, object_dict[index], "on", object_dict[index - 1])
@@ -51,9 +51,9 @@ def rank():
     def builder(behaviors, object_dict, world_interface):
         _require_objects(object_dict, 3)
         return [
-            at_pos(behaviors, world_interface, object_dict[2], "on", "left side"),
-            at_pos(behaviors, world_interface, object_dict[1], "on", "the center"),
-            at_pos(behaviors, world_interface, object_dict[3], "on", "right side"),
+            at_pos(behaviors, world_interface, object_dict[2], "on", "left position"),
+            at_pos(behaviors, world_interface, object_dict[1], "on", "middle position"),
+            at_pos(behaviors, world_interface, object_dict[3], "on", "right position"),
         ]
 
     return builder

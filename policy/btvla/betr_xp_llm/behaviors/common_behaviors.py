@@ -532,7 +532,14 @@ class ActionBehavior(Behavior):
 
     def execute(self):
         """ Execute the action behavior. To be implemented by child classes. """
-        self.world_interface.generate_action(self.action_string)
+        self.world_interface.vla_model.set_language(self.action_string)
+        self.world_interface.action_count = 0
+
+        print("Executing VLA instruction:", self.action_string)
+        while self.world_interface.action_count < 80:
+            self.world_interface.generate_action(self.action_string)
+            if self.check_for_success():
+                break
     
 class ComparisonCondition(pt.behaviour.Behaviour):
     """Class template for conditions comparing against constants."""

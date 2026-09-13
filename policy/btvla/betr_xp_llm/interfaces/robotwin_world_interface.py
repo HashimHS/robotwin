@@ -14,9 +14,9 @@ import traceback
 import importlib
 
 y = 0
-x = 0.08
+x = 0.105
 z = 0.755
-POSITIONS = {"left side": [-x, y, z], "the center": [0, y, z], "right side": [x, y, z]}
+POSITIONS = {"left position": [-x, y, z], "center": [0, y, z], "right position": [x, y, z], "middle position": [0, -0.12, z]}
 
 def encode_obs(observation):
     input_rgb_arr = [
@@ -234,28 +234,23 @@ class WorldInterface(BaseWorldInterface):
     #     return self.get_scene_contact()
 
      # === 3. Vision Language Action Model ===
-    def generate_action(self, instruction):
+    def generate_action(self, instruction=""):
         """ Generate action using VLA model based on instruction """
 
-        self.vla_model.set_language(instruction)
+        observation = self.get_obs()
+        input_rgb_arr, input_state = encode_obs(observation)
+        self.vla_model.update_observation_window(input_rgb_arr, input_state)
 
-        print("Executing VLA instruction:", instruction)
-        action_count = 0
-        while action_count < 100:
+        # ======== Get Action ========
+
+        actions = self.vla_model.get_action()[:self.vla_model.pi0_step]
+
+        for action in actions:
+            self.take_action(action)
+            self.action_count += 1
             observation = self.get_obs()
             input_rgb_arr, input_state = encode_obs(observation)
             self.vla_model.update_observation_window(input_rgb_arr, input_state)
-
-            # ======== Get Action ========
-
-            actions = self.vla_model.get_action()[:self.vla_model.pi0_step]
-
-            for action in actions:
-                self.take_action(action)
-                action_count += 1
-                observation = self.get_obs()
-                input_rgb_arr, input_state = encode_obs(observation)
-                self.vla_model.update_observation_window(input_rgb_arr, input_state)
 
         # self.reset_vla()
         

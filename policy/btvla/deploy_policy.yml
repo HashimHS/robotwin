@@ -15,6 +15,6 @@ pi0_step: 10
 # Behavior tree options
 gripper_bias: null    # per-task grasp offset, applied to the embodiment by eval_policy.py
 goals_module: null    # python file defining build_goals(behaviors, object_dict, world_interface)
-step_lim: 1800        # override the task's evaluation step limit
+step_lim: 1000        # override the task's evaluation step limit
 vlm: false            # VLM reflection during execution (requires $OPENAI_API_KEY)
 stop_on_error: false  # abort the sweep when an episode raises instead of failing it

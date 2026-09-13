@@ -239,7 +239,7 @@ class Pick(ActionBehavior):
         self.action_string = name
 
     def to_string(parameters):
-        action_string = f"pick {extract_name(parameters['object'])} with the {extract_name(parameters['arm_tag'])} arm arm!"
+        action_string = f"pick the {extract_name(parameters['object'])} with the {extract_name(parameters['arm_tag'])} arm!"
         return action_string
 
     # def execute(self):
@@ -247,7 +247,15 @@ class Pick(ActionBehavior):
 
     def execute(self):
         self.world_interface.gripper_open(self.parameters["arm_tag"])
-        self.world_interface.generate_action(self.action_string)
+
+        self.world_interface.vla_model.set_language(self.action_string)
+        self.world_interface.action_count = 0
+
+        print("Executing VLA instruction:", self.action_string)
+        while self.world_interface.action_count < 80:
+            self.world_interface.generate_action(self.action_string)
+            if self.check_for_success():
+                break
 
 class MoveByDisplacement(ActionBehavior):
     skill_name = "MoveByDisplacement"
@@ -282,7 +290,7 @@ class Place(ActionBehavior):
 
         post = [Grasped('', {"not": True, "object": '"any object"', "arm_tag": parameters["arm_tag"]}, world_interface)]
 
-        if parameters["relation"] in  ["away", "center", "left side", "right side"]:
+        if parameters["relation"] in  ["away", "center", "left position", "right position", "middle position"]:
             post.append(AtPos('',{"object": parameters["object"], "relation": parameters["relation"]}, world_interface))
         else:
             post.append(AtPos('',{"object": parameters["object"], "relation": parameters["relation"], "relative_object": parameters["relative_object"]}, world_interface))
@@ -295,9 +303,9 @@ class Place(ActionBehavior):
     def to_string(parameters):
         # We have five action variants: place on, place inside, place away, place to the left of, place to the right of. Text needs to be generated accordingly.
         if parameters["relation"] == "away":
-            action_string = f"place {extract_name(parameters['object'])} {parameters['relation']} with the {extract_name(parameters['arm_tag'])} arm arm!"
+            action_string = f"place the {extract_name(parameters['object'])} {parameters['relation']} with the {extract_name(parameters['arm_tag'])} arm!"
         else:
-            action_string = f"place {extract_name(parameters['object'])} {parameters['relation']} {extract_name(parameters['relative_object'])} with the {extract_name(parameters['arm_tag'])} arm arm!"
+            action_string = f"place the {extract_name(parameters['object'])} {parameters['relation']} the {extract_name(parameters['relative_object'])} with the {extract_name(parameters['arm_tag'])} arm!"
         return action_string
     
     # def execute(self):

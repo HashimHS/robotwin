@@ -86,6 +86,52 @@ bash collect_data.sh ${task_name} ${task_config} ${gpu_id}
 ## 2. Modify Task Config
 ☝️ See [RoboTwin 2.0 Tasks Configurations Doc](https://robotwin-platform.github.io/doc/usage/configurations.html) for more details.
 
+## 3. Subtask (Atomic Action) Labeling
+A task can label every atomic action of its demonstration, so that the action being
+executed is known for every frame of the episode. The whole episode is still collected
+and still gets its own instruction, the labels are stored on top of it.
+
+Annotate `play_once` with `self.subtask(action, info)`, where `action` selects the
+instruction templates and `info` provides their placeholder values (see
+`envs/stack_blocks_three.py`):
+
+```python
+def pick_and_place_block(self, block):
+    arm_tag = ArmTag("left" if block.get_pose().p[0] < 0 else "right")
+
+    with self.subtask("pick", {"{A}": block.name, "{a}": str(arm_tag)}):
+        self.move(self.grasp_actor(block, arm_tag=arm_tag, pre_grasp_dis=0.09))
+        self.move(self.move_by_displacement(arm_tag=arm_tag, z=0.07))
+
+    with self.subtask("place", {"{A}": block.name, "{B}": target_name, "{a}": str(arm_tag)}):
+        self.move(self.place_actor(block, target_pose=target_pose, arm_tag=arm_tag))
+```
+
+`bash collect_data.sh ...` then additionally writes, per episode:
+
+| File | Content |
+| --- | --- |
+| `data/${task_name}/${task_config}/subtasks/episode${i}.json` | the key frames, i.e. the `[start_frame, end_frame)` of every atomic action and its parameters |
+| `data/${task_name}/${task_config}/instructions/episode${i}_subtasks.json` | the same segments plus the `seen` / `unseen` language instructions of each atomic action |
+
+The frame indices refer to the frames of `data/episode${i}.hdf5`, they cover the whole
+episode without gaps.
+
+The instructions are filled from `description/subtask_instruction/_default.json`, which
+holds templates for the common atomic actions (pick, place, move, push, ...). Add
+`description/subtask_instruction/${task_name}.json` to override them for a task. They
+can be regenerated without recollecting the data with:
+
+```
+cd description && bash gen_subtask_instructions.sh ${task_name} ${task_config} ${language_num}
+```
+
+To train on the atomic actions, `policy/pi05/scripts/process_data.py` carries the key
+frames into each processed episode and
+`policy/pi05/examples/kuka/convert_kuka_data_to_lerobot_robotwin.py` uses them to label
+each frame with the instruction of its atomic action (`--subtasks`, the default), or to
+emit one LeRobot episode per atomic action (`--split-subtask-episodes`).
+
 # 🚴‍♂️ Policy Baselines
 ## Policies Support
 [DP](https://robotwin-platform.github.io/doc/usage/DP.html), [ACT](https://robotwin-platform.github.io/doc/usage/ACT.html), [DP3](https://robotwin-platform.github.io/doc/usage/DP3.html), [RDT](https://robotwin-platform.github.io/doc/usage/RDT.html), [PI0](https://robotwin-platform.github.io/doc/usage/Pi0.html), [OpenVLA-oft](https://robotwin-platform.github.io/doc/usage/OpenVLA-oft.html)

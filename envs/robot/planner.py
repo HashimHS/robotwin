@@ -52,6 +52,10 @@ try:
             with open(self.yml_path, "r") as f:
                 yml_data = yaml.safe_load(f)
             self.frame_bias = yml_data["planner"]["frame_bias"]
+            # Opt-in per embodiment. curobo only constrains the goal pose, so the
+            # end effector is free to bow out of the plane it travels in; holding the
+            # pose components the motion does not need keeps the path straight.
+            self.path_constraint = yml_data["planner"].get("path_constraint", False)
 
             # motion generation
             if True:
@@ -90,7 +94,53 @@ try:
                 minimize_jerk=True,
             )
             self.motion_gen_batch = MotionGen(motion_gen_config)
-            self.motion_gen_batch.warmup(batch=CONFIGS.ROTATE_NUM)
+            # self.motion_gen_batch.warmup(batch=CONFIGS.ROTATE_NUM)
+
+        # Mirrors curobo's own validity check in MotionGen.update_pose_cost_metric
+        # (0.005 m / 0.05 rad), kept tighter so a constraint we build is never rejected.
+        _HOLD_POS_TOL = 0.004
+        _HOLD_ROT_TOL = 0.04
+
+        def _auto_hold_vec_weight(self, start_joint_states, goal_p, goal_q):
+            """
+            Build a goal-frame hold vector pinning every pose component that the
+            motion does not actually need to change.
+
+            curobo holds these components relative to the goal frame, so a move
+            that only travels along two axes of that frame keeps the third axis
+            and the orientation fixed for the whole trajectory instead of bowing
+            away from the plane. Returns None when nothing can be held.
+            """
+            start_pose = self.motion_gen.compute_kinematics(start_joint_states).ee_pose
+            start_p = start_pose.position.view(-1).cpu().numpy()
+            start_q = start_pose.quaternion.view(-1).cpu().numpy()
+
+            # start -> goal displacement expressed in the goal frame
+            disp = t3d.quaternions.quat2mat(goal_q).T @ (np.asarray(goal_p) - start_p)
+            hold_pos = [1.0 if abs(d) < self._HOLD_POS_TOL else 0.0 for d in disp]
+
+            rel_q = t3d.quaternions.qmult(t3d.quaternions.qconjugate(start_q), goal_q)
+            angle = 2.0 * np.arccos(np.clip(abs(rel_q[0]), -1.0, 1.0))
+            hold_rot = [1.0] * 3 if angle < self._HOLD_ROT_TOL else [0.0] * 3
+
+            hold_vec = hold_rot + hold_pos
+            return hold_vec if any(hold_vec) else None
+
+        # Holding a component can force the arm the long way round inside the plane.
+        # A constrained path that detours this much further than the straight line is
+        # worse than the unconstrained one it replaces.
+        _MAX_PATH_DETOUR = 2.0
+
+        def _keep_constrained_plan(self, result):
+            """Whether a constrained plan is worth keeping over an unconstrained retry."""
+            if not result.success.item():
+                return False
+            ee = self.motion_gen.compute_kinematics(result.interpolated_plan).ee_pos_seq.reshape(-1, 3)
+            straight = torch.linalg.norm(ee[-1] - ee[0])
+            if straight < 0.02:  # in-place reorientation, no meaningful ratio to test
+                return True
+            arc = torch.linalg.norm(ee[1:] - ee[:-1], dim=-1).sum()
+            return bool(arc <= self._MAX_PATH_DETOUR * straight)
 
         def plan_path(
             self,
@@ -139,14 +189,30 @@ try:
                 enable_finetune_trajopt=True,
                 parallel_finetune=True,
             )
+            auto_constrained = False
             if constraint_pose is not None:
                 pose_cost_metric = PoseCostMetric(
                     hold_partial_pose=True,
                     hold_vec_weight=self.motion_gen.tensor_args.to_device(constraint_pose),
                 )
                 plan_config.pose_cost_metric = pose_cost_metric
+            elif self.path_constraint:
+                hold_vec_weight = self._auto_hold_vec_weight(start_joint_states, target_pose_p, target_pose_q)
+                if hold_vec_weight is not None:
+                    plan_config.pose_cost_metric = PoseCostMetric(
+                        hold_partial_pose=True,
+                        hold_vec_weight=self.motion_gen.tensor_args.to_device(hold_vec_weight),
+                    )
+                    auto_constrained = True
 
             result = self.motion_gen.plan_single(start_joint_states, goal_pose_of_ee, plan_config)
+
+            if auto_constrained and not self._keep_constrained_plan(result):
+                # The derived constraint is a preference, not a requirement. A move that has
+                # to leave the plane (to clear an obstacle, say) or that would only reach the
+                # goal by detouring around it still plans freely, as it did before.
+                plan_config.pose_cost_metric = None
+                result = self.motion_gen.plan_single(start_joint_states, goal_pose_of_ee, plan_config)
 
             # output
             res_result = dict()

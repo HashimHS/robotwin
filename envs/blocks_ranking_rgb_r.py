@@ -118,6 +118,11 @@ class blocks_ranking_rgb_r(Base_Task):
             y_pose,
             0.74 + self.table_z_bias,
         ] + [0, 1, 0, 0]
+        
+        self.failure_types = {
+            0: "Wrong sort sequence",
+            1: "Manipulation failure",
+        }
 
     def get_info(self):
         # Store information about the blocks and which arms were used
@@ -193,3 +198,22 @@ class blocks_ranking_rgb_r(Base_Task):
                 and np.all(abs(block2_pose[:2] - block3_pose[:2]) < eps) and block1_pose[0] < block2_pose[0]
                 and block2_pose[0] < block3_pose[0]
                 and self.is_left_gripper_open() and self.is_right_gripper_open())
+        
+    def get_failure_info(self):
+        block1_pose = self.block1.get_pose().p
+        block2_pose = self.block2.get_pose().p
+        block3_pose = self.block3.get_pose().p
+        poses = [block1_pose, block2_pose, block3_pose]
+
+        eps = [0.13, 0.02]
+
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    if len(set([i, j, k])) == 3:
+                        if (np.all(abs(poses[i][:2] - poses[j][:2]) < eps)
+                                and np.all(abs(poses[j][:2] - poses[k][:2]) < eps) and poses[i][0] < poses[j][0]
+                                and poses[j][0] < poses[k][0]):
+                            return self.failure_types[0]
+        
+        return self.failure_types[1]

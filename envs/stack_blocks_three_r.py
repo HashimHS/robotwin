@@ -166,9 +166,12 @@ class stack_blocks_three_r(Base_Task):
         poses = [block1_pose, block2_pose, block3_pose]
         eps = [0.025, 0.025, 0.012]
 
-        for i in range(1, len(poses)):
-            for j in range(1, len(poses)):
-                if i != j and j != i-1:
-                    if np.all(abs(poses[i] - np.array(poses[j][:2].tolist() + [poses[j][2] + 0.05])) < eps):
-                        return self.failure_types[0]
+        # Check if the blocks are stacked in any order, but not in the correct order
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    if len(set([i, j, k])) == 3:
+                        if (np.all(abs(poses[j] - np.array(poses[i][:2].tolist() + [poses[i][2] + 0.05])) < eps)
+                            and np.all(abs(poses[k] - np.array(poses[j][:2].tolist() + [poses[j][2] + 0.05])) < eps)):
+                            return self.failure_types[0]
         return self.failure_types[1]

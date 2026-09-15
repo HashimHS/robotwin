@@ -42,6 +42,79 @@ def eval_function_decorator(policy_name, model_name):
     except ImportError as e:
         raise e
 
+# Cameras recorded during evaluation, mapped to the suffix of the saved video file.
+EVAL_VIDEO_CAMERAS = {"head_camera": "head"}
+
+# Failure categories reported in results.md, mapped to the failure info the tasks return.
+RESULT_FAILURE_COLUMNS = {
+    "Manipulation Failure": lambda info: info == "Manipulation failure",
+    "Sequence Failure": lambda info: "sequence" in info.lower(),
+}
+RESULTS_TABLE_PATH = os.path.join(parent_directory, "../results.md")
+
+
+def start_eval_video_recorders(TASK_ENV):
+    """Start one ffmpeg process per recorded camera, writing ``episode{n}_{head,front}.mp4``."""
+    cameras = TASK_ENV.cameras
+    for camera_name, suffix in EVAL_VIDEO_CAMERAS.items():
+        if camera_name not in cameras.static_camera_name:
+            continue
+        camera_config = cameras.static_camera_config[cameras.static_camera_name.index(camera_name)]
+        video_size = f"{camera_config['w']}x{camera_config['h']}"
+        ffmpeg = subprocess.Popen(
+            [
+                "ffmpeg",
+                "-y",
+                "-loglevel",
+                "error",
+                "-f",
+                "rawvideo",
+                "-pixel_format",
+                "rgb24",
+                "-video_size",
+                video_size,
+                "-framerate",
+                "10",
+                "-i",
+                "-",
+                "-pix_fmt",
+                "yuv420p",
+                "-vcodec",
+                "libx264",
+                "-crf",
+                "23",
+                f"{TASK_ENV.eval_video_path}/episode{TASK_ENV.test_num}_{suffix}.mp4",
+            ],
+            stdin=subprocess.PIPE,
+        )
+        TASK_ENV._set_eval_video_ffmpeg(ffmpeg, camera_name)
+
+
+def append_results_table(timestamp, model_name, action_horizon, task_name, task_config, suc_num, test_num,
+                         failure_count, path=RESULTS_TABLE_PATH):
+    """Append one row with the final outcome of an evaluation to the results table."""
+    columns = ["Eval Timestamp", "Model_Name", "Action Horizon", "Task_Name", "Task_Config", "Success rate",
+               *RESULT_FAILURE_COLUMNS]
+    failures = {
+        column: sum(count for info, count in failure_count.items() if matches(str(info)))
+        for column, matches in RESULT_FAILURE_COLUMNS.items()
+    }
+    row = [timestamp, model_name, action_horizon, task_name, task_config,
+           f"{suc_num}/{test_num} ({round(suc_num / test_num * 100, 1)}%)", *failures.values()]
+
+    existing = ""
+    if os.path.isfile(path):
+        with open(path, "r", encoding="utf-8") as f:
+            existing = f.read()
+    with open(path, "a", encoding="utf-8") as f:
+        if "| " + " | ".join(columns) + " |" not in existing:
+            if existing and not existing.endswith("\n"):
+                f.write("\n")
+            f.write("| " + " | ".join(columns) + " |\n")
+            f.write("|" + "---|" * len(columns) + "\n")
+        f.write("| " + " | ".join(str(value) for value in row) + " |\n")
+
+
 def get_camera_config(camera_type):
     camera_config_path = os.path.join(parent_directory, "../task_config/_camera_config.yml")
 
@@ -162,19 +235,30 @@ def main(usr_args):
 
     st_seed = 100000 * (1 + seed)
     suc_nums = []
-    test_num = 100
+    test_num = int(usr_args.get("test_num") or 100)  # override with --test_num for quick checks
     topk = 1
 
     model = get_model(usr_args)
-    st_seed, suc_num = eval_policy(task_name,
-                                   TASK_ENV,
-                                   args,
-                                   model,
-                                   st_seed,
-                                   test_num=test_num,
-                                   video_size=video_size,
-                                   instruction_type=instruction_type)
+    st_seed, suc_num, failure_count = eval_policy(task_name,
+                                                  TASK_ENV,
+                                                  args,
+                                                  model,
+                                                  st_seed,
+                                                  test_num=test_num,
+                                                  video_size=video_size,
+                                                  instruction_type=instruction_type)
     suc_nums.append(suc_num)
+
+    append_results_table(
+        timestamp=current_time,
+        model_name=f"{policy_name}/{model.model_name}-{model.checkpoint_id}",
+        action_horizon=model.pi0_step,
+        task_name=task_name,
+        task_config=task_config,
+        suc_num=suc_num,
+        test_num=test_num,
+        failure_count=failure_count,
+    )
 
     topk_success_rate = sorted(suc_nums, reverse=True)[:topk]
 
@@ -273,33 +357,7 @@ def eval_policy(task_name,
         TASK_ENV.set_instruction(instruction=instruction)  # set language instruction
 
         if TASK_ENV.eval_video_path is not None:
-            ffmpeg = subprocess.Popen(
-                [
-                    "ffmpeg",
-                    "-y",
-                    "-loglevel",
-                    "error",
-                    "-f",
-                    "rawvideo",
-                    "-pixel_format",
-                    "rgb24",
-                    "-video_size",
-                    video_size,
-                    "-framerate",
-                    "10",
-                    "-i",
-                    "-",
-                    "-pix_fmt",
-                    "yuv420p",
-                    "-vcodec",
-                    "libx264",
-                    "-crf",
-                    "23",
-                    f"{TASK_ENV.eval_video_path}/episode{TASK_ENV.test_num}.mp4",
-                ],
-                stdin=subprocess.PIPE,
-            )
-            TASK_ENV._set_eval_video_ffmpeg(ffmpeg)
+            start_eval_video_recorders(TASK_ENV)
 
         succ = False
         reset_func(model)
@@ -308,6 +366,8 @@ def eval_policy(task_name,
             eval_func(TASK_ENV, model, observation)
             if TASK_ENV.check_success():
                 succ = True
+                break
+            if TASK_ENV.check_failure():
                 break
         # task_total_reward += TASK_ENV.episode_score
         if TASK_ENV.eval_video_path is not None:
@@ -350,7 +410,7 @@ def eval_policy(task_name,
         # TASK_ENV._take_picture()
         now_seed += 1
 
-    return now_seed, TASK_ENV.suc
+    return now_seed, TASK_ENV.suc, failure_count
 
 
 def parse_args_and_config():

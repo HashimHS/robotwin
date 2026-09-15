@@ -99,6 +99,8 @@ class Base_Task(gym.Env):
         self.now_obs = {}
         self.take_action_cnt = 0
         self.eval_video_path = kwags.get("eval_video_save_dir", None)
+        # {camera_name: ffmpeg process} recording the evaluation video of each camera
+        self.eval_video_ffmpeg = {}
 
         self.save_freq = kwags.get("save_freq")
         self.world_pcd = None
@@ -203,6 +205,9 @@ class Base_Task(gym.Env):
 
     def check_success(self):
         pass
+    
+    def check_failure(self):
+        return False
 
     def setup_scene(self, **kwargs):
         """
@@ -580,8 +585,25 @@ class Base_Task(gym.Env):
         self.left_joint_path = args.get("left_joint_path", [])
         self.right_joint_path = args.get("right_joint_path", [])
 
-    def _set_eval_video_ffmpeg(self, ffmpeg):
-        self.eval_video_ffmpeg = ffmpeg
+    def _set_eval_video_ffmpeg(self, ffmpeg, camera_name="head_camera"):
+        """Register the ffmpeg process that records ``camera_name``.
+
+        ``ffmpeg`` may also be a ``{camera_name: process}`` dict to register several
+        cameras at once. Each process receives that camera's rgb frame on every step.
+        """
+        if not isinstance(getattr(self, "eval_video_ffmpeg", None), dict):
+            self.eval_video_ffmpeg = {}
+        if isinstance(ffmpeg, dict):
+            self.eval_video_ffmpeg.update(ffmpeg)
+        else:
+            self.eval_video_ffmpeg[camera_name] = ffmpeg
+
+    def _write_eval_video_frame(self):
+        """Send the current rgb frame of every recorded camera to its ffmpeg process."""
+        for camera_name, ffmpeg in self.eval_video_ffmpeg.items():
+            rgb = self.now_obs.get("observation", {}).get(camera_name, {}).get("rgb")
+            if rgb is not None:
+                ffmpeg.stdin.write(rgb.tobytes())
 
     def close_env(self, clear_cache=False):
         if clear_cache:
@@ -591,10 +613,10 @@ class Base_Task(gym.Env):
         self.close()
 
     def _del_eval_video_ffmpeg(self):
-        if self.eval_video_ffmpeg:
-            self.eval_video_ffmpeg.stdin.close()
-            self.eval_video_ffmpeg.wait()
-            del self.eval_video_ffmpeg
+        for ffmpeg in self.eval_video_ffmpeg.values():
+            ffmpeg.stdin.close()
+            ffmpeg.wait()
+        self.eval_video_ffmpeg = {}
 
     def delay(self, delay_time, save_freq=None):
         render_freq = self.render_freq
@@ -1493,7 +1515,7 @@ class Base_Task(gym.Env):
 
         eval_video_freq = 1  # fixed
         if (self.eval_video_path is not None and self.take_action_cnt % eval_video_freq == 0):
-            self.eval_video_ffmpeg.stdin.write(self.now_obs["observation"]["head_camera"]["rgb"].tobytes())
+            self._write_eval_video_frame()
 
         self.take_action_cnt += 1
         print(f"step: \033[92m{self.take_action_cnt} / {self.step_lim}\033[0m", end="\r")
@@ -1669,7 +1691,7 @@ class Base_Task(gym.Env):
                 self.eval_success = True
                 self.get_obs() # update obs
                 if (self.eval_video_path is not None):
-                    self.eval_video_ffmpeg.stdin.write(self.now_obs["observation"]["head_camera"]["rgb"].tobytes())
+                    self._write_eval_video_frame()
                 return
 
         self._update_render()
